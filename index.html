@@ -667,10 +667,12 @@
         var diag = [];
         var badRooms = rooms.filter(function(r) { return !isNaN(r.dbm) && r.dbm <= -80; });
 
-        if (rooms.length > 0 && badRooms.length === 0) {
+        var hasDeadZones = problems.indexOf('dead_zones') >= 0;
+        if (hasDeadZones || badRooms.length > 0) {
+            var desc = badRooms.length > 0 ? badRooms.map(function(r){ return r.name; }).join(', ') : 'Zonas sin cobertura o señal muy débil reportadas.';
+            diag.push({ type:'bad', title:'Zonas con señal crítica' + (badRooms.length > 0 ? ' (' + badRooms.length + ')' : ''), desc: desc });
+        } else if (rooms.length > 0) {
             diag.push({ type:'good', title:'Cobertura aceptable', desc:'No se detectaron zonas con señal crítica.' });
-        } else if (badRooms.length > 0) {
-            diag.push({ type:'bad', title:'Zonas con señal crítica (' + badRooms.length + ')', desc: badRooms.map(function(r){ return r.name; }).join(', ') });
         }
 
         if (posEl && (posEl.value === 'corner')) {
@@ -690,7 +692,7 @@
         if (!isNaN(spDown) && !isNaN(spCont) && spCont > 0 && spDown < spCont * 0.6) {
             diag.push({ type:'warn', title:'Velocidad real baja junto al router', desc: Math.round(spDown) + ' Mbps recibidos de ' + spCont + ' Mbps contratados. Puede ser problema del ISP o del cable.' });
         }
-        if (badRooms.length >= 2 || (badRooms.length >= 1 && problems.indexOf('thick_walls') >= 0)) {
+        if (hasDeadZones || badRooms.length >= 2 || (badRooms.length >= 1 && problems.indexOf('thick_walls') >= 0)) {
             diag.push({ type:'bad', title:'Se recomienda MESH o Access Point', desc:'La cobertura actual no alcanza para todo el domicilio.' });
         }
         if (diag.length === 0) {
