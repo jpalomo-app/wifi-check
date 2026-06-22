@@ -319,6 +319,65 @@
             padding: 4px 0;
         }
 
+        /* Phase banners */
+        .phase-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .phase-antes {
+            background: #fff7ed;
+            color: #c2410c;
+            border-left: 4px solid #ea580c;
+        }
+        .phase-despues {
+            background: #f0fdf4;
+            color: #15803d;
+            border-left: 4px solid #16a34a;
+        }
+
+        /* After room cards */
+        .after-room-card {
+            background: #f0fdf4;
+            border: 1.5px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 13px;
+            margin-bottom: 10px;
+        }
+        .after-room-name { font-weight: 600; font-size: 14px; color: #15803d; margin-bottom: 8px; }
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .compare-col { }
+        .compare-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        .compare-label-antes { color: #c2410c; }
+        .compare-label-despues { color: #15803d; }
+        .compare-val {
+            font-size: 12px;
+            color: #6b7280;
+            background: #f8fafc;
+            border-radius: 6px;
+            padding: 5px 8px;
+            margin-bottom: 4px;
+        }
+        .after-inputs { display: flex; gap: 6px; }
+        .after-inputs .form-group { flex: 1; margin-bottom: 0; }
+        .after-inputs label { font-size: 11px; }
+        .after-inputs input { font-size: 14px; padding: 8px; }
+
         .btn-pdf {
             width: 100%;
             padding: 14px;
@@ -375,8 +434,9 @@
         </div>
     </div>
 
-    <!-- PASO 2: Equipamiento -->
+    <!-- PASO 2: Equipamiento ANTES -->
     <div class="step" id="step2">
+        <div class="phase-banner phase-antes">📋 ANTES — Estado actual del cliente</div>
         <div class="card">
             <div class="card-title">📡 Equipo actual</div>
             <div class="form-group">
@@ -431,8 +491,9 @@
         </div>
     </div>
 
-    <!-- PASO 3: Mediciones -->
+    <!-- PASO 3: Mediciones ANTES -->
     <div class="step" id="step3">
+        <div class="phase-banner phase-antes">📋 ANTES — Estado actual del cliente</div>
         <div class="card">
             <div class="card-title">📊 Señal por ambiente</div>
             <div class="alert alert-info">
@@ -452,8 +513,9 @@
         </div>
     </div>
 
-    <!-- PASO 4: Análisis WiFi -->
+    <!-- PASO 4: Análisis WiFi ANTES -->
     <div class="step" id="step4">
+        <div class="phase-banner phase-antes">📋 ANTES — Estado actual del cliente</div>
         <div class="card">
             <div class="card-title">⚡ Velocidad junto al router</div>
             <div class="form-group">
@@ -506,8 +568,9 @@
         </div>
     </div>
 
-    <!-- PASO 5: Problemas -->
+    <!-- PASO 5: Problemas ANTES -->
     <div class="step" id="step5">
+        <div class="phase-banner phase-antes">📋 ANTES — Estado actual del cliente</div>
         <div class="card">
             <div class="card-title">🔍 Problemas detectados</div>
 
@@ -541,7 +604,40 @@
     </div>
 
     <!-- PASO 6: Informe -->
+    <!-- PASO 6: DESPUÉS — Equipamiento instalado -->
     <div class="step" id="step6">
+        <div class="phase-banner phase-despues">✅ DESPUÉS — Lo que instalaste</div>
+        <div class="card">
+            <div class="card-title">🔧 Equipamiento instalado</div>
+            <div class="alert alert-info">Cargá el equipo nuevo que instalaste en el domicilio.</div>
+            <div id="afterFloorList"></div>
+            <button class="btn-add" onclick="addAfterFloor()">+ Agregar piso / equipo instalado</button>
+        </div>
+    </div>
+
+    <!-- PASO 7: DESPUÉS — Medición post-instalación -->
+    <div class="step" id="step7">
+        <div class="phase-banner phase-despues">✅ DESPUÉS — Lo que instalaste</div>
+        <div class="card">
+            <div class="card-title">📊 Medición post-instalación</div>
+            <div class="alert alert-info">Medí la señal y velocidad en los mismos ambientes de antes.</div>
+            <div id="afterRoomList"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">⚡ Velocidad con el nuevo equipo</div>
+            <div class="form-group">
+                <label>Bajada junto al router (Mbps)</label>
+                <input type="number" id="afterSpeedDown" placeholder="Ej: 140">
+            </div>
+            <div class="form-group">
+                <label>Subida (Mbps)</label>
+                <input type="number" id="afterSpeedUp" placeholder="Ej: 80">
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 8: Informe comparativo -->
+    <div class="step" id="step8">
         <div class="card">
             <div class="card-title">✅ Diagnóstico</div>
             <div id="diagnosisArea"></div>
@@ -566,16 +662,18 @@
 
 <script>
     let currentStep = 1;
-    const totalSteps = 6;
+    const totalSteps = 8;
     let roomCount = 0;
 
     const stepTitles = [
         'Datos del cliente',
-        'Equipamiento',
-        'Señal por ambiente',
-        'Análisis WiFi',
-        'Problemas detectados',
-        'Informe final'
+        'ANTES — Equipamiento actual',
+        'ANTES — Señal por ambiente',
+        'ANTES — Análisis WiFi',
+        'ANTES — Problemas detectados',
+        'DESPUÉS — Equipamiento instalado',
+        'DESPUÉS — Medición post-instalación',
+        'Informe comparativo'
     ];
 
     function updateUI() {
@@ -599,6 +697,7 @@
     }
 
     function nextStep() {
+        if (currentStep === 6) populateAfterRooms();
         if (currentStep === totalSteps - 1) generateReport();
         if (currentStep < totalSteps) {
             currentStep++;
@@ -661,6 +760,152 @@
         if (dbm > -70) return 'Buena';
         if (dbm > -80) return 'Aceptable';
         return 'Problemática';
+    }
+
+    // ── DESPUÉS: equipamiento instalado (misma lógica que floors del antes) ──
+    var afterFloorCount = 0;
+    var afterFloorDeviceCount = {};
+
+    function addAfterFloor() {
+        afterFloorCount++;
+        var fid = afterFloorCount;
+        afterFloorDeviceCount[fid] = 0;
+        var defName = floorNames ? (floorNames[fid - 1] || ('Piso ' + fid)) : ('Piso ' + fid);
+        var div = document.createElement('div');
+        div.className = 'floor-card';
+        div.id = 'afterFloor' + fid;
+        div.style.borderColor = '#bbf7d0';
+        div.innerHTML =
+            '<div class="floor-header">' +
+                '<div class="floor-title" style="color:#15803d">✅ Piso / Área ' + fid + '</div>' +
+                '<button class="btn-remove" onclick="removeAfterFloor(' + fid + ')">✕ Quitar</button>' +
+            '</div>' +
+            '<div class="form-group">' +
+                '<label>Nombre del piso o área</label>' +
+                '<input type="text" id="afterFloorName' + fid + '" value="' + defName + '">' +
+            '</div>' +
+            '<div id="afterFloorDevices' + fid + '"></div>' +
+            '<button class="btn-add-device" style="color:#15803d" onclick="addAfterFloorDevice(' + fid + ')">+ Agregar equipo instalado</button>';
+        document.getElementById('afterFloorList').appendChild(div);
+        addAfterFloorDevice(fid);
+    }
+
+    function removeAfterFloor(fid) {
+        var el = document.getElementById('afterFloor' + fid);
+        if (el) el.remove();
+    }
+
+    function addAfterFloorDevice(fid) {
+        afterFloorDeviceCount[fid] = (afterFloorDeviceCount[fid] || 0) + 1;
+        var did = afterFloorDeviceCount[fid];
+        var container = document.getElementById('afterFloorDevices' + fid);
+        var row = document.createElement('div');
+        row.id = 'afterFloorDevice' + fid + '_' + did;
+        row.style.cssText = 'display:flex; gap:6px; align-items:flex-end; margin-bottom:6px;';
+        var opts = (typeof deviceTypes !== 'undefined' ? deviceTypes : ['Módem ISP','Router','Repetidor WiFi','Nodo MESH','Access Point','Switch','Otro']).map(function(t) {
+            return '<option value="' + t + '">' + t + '</option>';
+        }).join('');
+        row.innerHTML =
+            '<div class="form-group" style="flex:1.2">' +
+                '<label>Tipo</label>' +
+                '<select id="afterFloorDType' + fid + '_' + did + '">' + opts + '</select>' +
+            '</div>' +
+            '<div class="form-group" style="flex:2">' +
+                '<label>Modelo / detalle</label>' +
+                '<input type="text" id="afterFloorDModel' + fid + '_' + did + '" placeholder="Ej: TP-Link Deco M5">' +
+            '</div>' +
+            '<button class="btn-remove-device" onclick="removeAfterFloorDevice(' + fid + ',' + did + ')" title="Quitar">×</button>';
+        container.appendChild(row);
+    }
+
+    function removeAfterFloorDevice(fid, did) {
+        var el = document.getElementById('afterFloorDevice' + fid + '_' + did);
+        if (el) el.remove();
+    }
+
+    function getAfterFloors() {
+        var floors = [];
+        document.querySelectorAll('[id^="afterFloor"]:not([id*="Device"]):not([id*="Name"]):not([id*="DType"]):not([id*="DModel"]):not([id="afterFloorList"])').forEach(function(card) {
+            if (!card.classList.contains('floor-card')) return;
+            var fid = card.id.replace('afterFloor', '');
+            var nameEl = document.getElementById('afterFloorName' + fid);
+            var name = nameEl ? nameEl.value : ('Piso ' + fid);
+            var devices = [];
+            card.querySelectorAll('[id^="afterFloorDevice' + fid + '_"]').forEach(function(row) {
+                var did = row.id.split('_')[1];
+                var typeEl  = document.getElementById('afterFloorDType'  + fid + '_' + did);
+                var modelEl = document.getElementById('afterFloorDModel' + fid + '_' + did);
+                if (typeEl) devices.push({ type: typeEl.value || '-', model: modelEl ? (modelEl.value || '') : '' });
+            });
+            if (devices.length > 0) floors.push({ name: name, devices: devices });
+        });
+        return floors;
+    }
+
+    // ── DESPUÉS: medición post-instalación ──
+    function populateAfterRooms() {
+        var container = document.getElementById('afterRoomList');
+        container.innerHTML = '';
+        var rooms = getRooms();
+        if (rooms.length === 0) {
+            container.innerHTML = '<p style="color:#6b7280;font-size:13px;padding:8px 0">No hay ambientes cargados en el ANTES.</p>';
+            return;
+        }
+        rooms.forEach(function(r, i) {
+            var idx = i + 1;
+            var beforeDbm  = isNaN(r.dbm)  ? '-' : r.dbm  + ' dBm (' + sigText(r.dbm)  + ')';
+            var beforeDown = isNaN(r.down) ? '-' : r.down + ' Mbps';
+            var div = document.createElement('div');
+            div.className = 'after-room-card';
+            div.innerHTML =
+                '<div class="after-room-name">📍 ' + r.name + '</div>' +
+                '<div class="compare-grid">' +
+                    '<div class="compare-col">' +
+                        '<div class="compare-label compare-label-antes">ANTES</div>' +
+                        '<div class="compare-val">📶 ' + beforeDbm + '</div>' +
+                        '<div class="compare-val">⬇️ ' + beforeDown + '</div>' +
+                    '</div>' +
+                    '<div class="compare-col">' +
+                        '<div class="compare-label compare-label-despues">DESPUÉS</div>' +
+                        '<div class="after-inputs">' +
+                            '<div class="form-group"><label>dBm</label><input type="number" id="afterDbm' + idx + '" placeholder="-50" oninput="updateAfterSignal(' + idx + ', \'' + r.name + '\')"></div>' +
+                            '<div class="form-group"><label>Mbps ↓</label><input type="number" id="afterDown' + idx + '" placeholder="120"></div>' +
+                        '</div>' +
+                        '<div class="signal-indicator" id="afterSig' + idx + '"></div>' +
+                    '</div>' +
+                '</div>';
+            container.appendChild(div);
+        });
+    }
+
+    function updateAfterSignal(idx) {
+        var dbm = parseInt(document.getElementById('afterDbm' + idx).value);
+        var el = document.getElementById('afterSig' + idx);
+        if (!el || isNaN(dbm)) { if (el) el.innerHTML = ''; return; }
+        var cls, txt;
+        if (dbm > -60)      { cls = 'signal-excellent'; txt = '🟢 Excelente'; }
+        else if (dbm > -70) { cls = 'signal-good';      txt = '🟡 Buena'; }
+        else if (dbm > -80) { cls = 'signal-ok';        txt = '🟠 Aceptable'; }
+        else                 { cls = 'signal-bad';       txt = '🔴 Problemática'; }
+        el.innerHTML = '<span class="signal-badge ' + cls + '">' + txt + ' (' + dbm + ' dBm)</span>';
+    }
+
+    function getAfterRooms() {
+        var rooms = getRooms();
+        var after = [];
+        rooms.forEach(function(r, i) {
+            var idx = i + 1;
+            var dbmEl  = document.getElementById('afterDbm'  + idx);
+            var downEl = document.getElementById('afterDown' + idx);
+            after.push({
+                name: r.name,
+                beforeDbm:  r.dbm,
+                beforeDown: r.down,
+                afterDbm:   dbmEl  ? parseInt(dbmEl.value)   : NaN,
+                afterDown:  downEl ? parseFloat(downEl.value) : NaN
+            });
+        });
+        return after;
     }
 
     var floorCount = 0;
@@ -802,9 +1047,13 @@
         var g5Map     = { yes:'Sí', no:'No', unknown:'No verificado' };
         var has5g     = g5El ? (g5Map[g5El.value] || '-') : '-';
 
-        var rooms    = getRooms();
-        var floors   = getFloors();
-        var problems = getProblems();
+        var rooms      = getRooms();
+        var floors     = getFloors();
+        var afterFloors = getAfterFloors();
+        var afterRooms  = getAfterRooms();
+        var afterDown   = document.getElementById('afterSpeedDown').value || '-';
+        var afterUp     = document.getElementById('afterSpeedUp').value   || '-';
+        var problems   = getProblems();
         var extra    = document.getElementById('extraNotes').value;
 
         var probLabels = {
@@ -931,6 +1180,54 @@
 
         if (extra) {
             txt += '\n📝 OBSERVACIONES\n' + extra + '\n';
+        }
+
+        // ── DESPUÉS ──
+        if (afterFloors.length > 0 || afterRooms.some(function(r){ return !isNaN(r.afterDbm); })) {
+            txt += '\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            txt += '✅ DESPUÉS — MEJORAS REALIZADAS\n';
+            txt += '━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+
+            if (afterFloors.length > 0) {
+                txt += '\n🔧 EQUIPAMIENTO INSTALADO\n';
+                afterFloors.forEach(function(f) {
+                    txt += '• ' + f.name + ': ';
+                    txt += f.devices.map(function(d){ return d.type + (d.model ? ' (' + d.model + ')' : ''); }).join(' + ');
+                    txt += '\n';
+                });
+            }
+
+            var hasAfterSpeed = afterDown !== '-' || afterUp !== '-';
+            if (hasAfterSpeed) {
+                txt += '\n⚡ VELOCIDAD POST-INSTALACIÓN\n';
+                txt += '• Bajada: ' + afterDown + ' Mbps\n';
+                txt += '• Subida: ' + afterUp   + ' Mbps\n';
+                var prevDown = parseFloat(document.getElementById('speedAtRouter').value);
+                var newDown  = parseFloat(afterDown);
+                if (!isNaN(prevDown) && !isNaN(newDown) && newDown > prevDown) {
+                    txt += '  → Mejora: +' + Math.round(newDown - prevDown) + ' Mbps de bajada ✅\n';
+                }
+            }
+
+            var hasAfterMeasurements = afterRooms.some(function(r){ return !isNaN(r.afterDbm); });
+            if (hasAfterMeasurements) {
+                txt += '\n📊 COMPARACIÓN POR AMBIENTE\n';
+                txt += '  Ambiente               ANTES          DESPUÉS\n';
+                afterRooms.forEach(function(r) {
+                    if (isNaN(r.afterDbm) && isNaN(r.afterDown)) return;
+                    var name = (r.name + '                ').slice(0, 22);
+                    var antes   = isNaN(r.beforeDbm)  ? '     -     ' : (r.beforeDbm  + ' dBm').padStart(11);
+                    var despues = isNaN(r.afterDbm)   ? '     -     ' : (r.afterDbm   + ' dBm').padStart(11);
+                    var mejora  = (!isNaN(r.beforeDbm) && !isNaN(r.afterDbm) && r.afterDbm > r.beforeDbm) ? ' ✅ +' + Math.abs(r.afterDbm - r.beforeDbm) + ' dBm' : '';
+                    txt += '  ' + name + antes + '   →' + despues + mejora + '\n';
+                    if (!isNaN(r.beforeDown) || !isNaN(r.afterDown)) {
+                        var antesV   = isNaN(r.beforeDown) ? '     -     ' : (r.beforeDown  + ' Mbps').padStart(11);
+                        var despuesV = isNaN(r.afterDown)  ? '     -     ' : (r.afterDown   + ' Mbps').padStart(11);
+                        var mejoraV  = (!isNaN(r.beforeDown) && !isNaN(r.afterDown) && r.afterDown > r.beforeDown) ? ' ✅ +' + Math.round(r.afterDown - r.beforeDown) + ' Mbps' : '';
+                        txt += '  ' + '                      ' + antesV + '   →' + despuesV + mejoraV + '\n';
+                    }
+                });
+            }
         }
 
         txt += '\n━━━━━━━━━━━━━━━━━━━━━━━━━';
@@ -1190,6 +1487,87 @@
             var lines = doc.splitTextToSize(extra, W - margin*2 - 4);
             lines.forEach(function(line) { checkY(5); doc.text(line, margin + 2, y); y += 5; });
             y += 2;
+        }
+
+        // ── SECCIÓN DESPUÉS ──
+        var afterFloorsPdf = getAfterFloors();
+        var afterRoomsPdf  = getAfterRooms();
+        var afterDownPdf   = document.getElementById('afterSpeedDown').value;
+        var afterUpPdf     = document.getElementById('afterSpeedUp').value;
+        var hasAfterData   = afterFloorsPdf.length > 0 ||
+                             afterRoomsPdf.some(function(r){ return !isNaN(r.afterDbm); }) ||
+                             afterDownPdf || afterUpPdf;
+
+        if (hasAfterData) {
+            addPage();
+            // Banner DESPUÉS
+            doc.setFillColor(22, 163, 74);
+            doc.rect(0, 0, W, 10, 'F');
+            doc.setFontSize(10); doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('✅  DESPUÉS — MEJORAS REALIZADAS', margin, 7);
+            doc.setFont('helvetica', 'normal');
+            y = 18;
+
+            // Equipamiento instalado
+            if (afterFloorsPdf.length > 0) {
+                sectionTitle('EQUIPAMIENTO INSTALADO');
+                afterFloorsPdf.forEach(function(f) {
+                    var devText = f.devices.map(function(d){ return d.type + (d.model ? ' (' + d.model + ')' : ''); }).join('  +  ');
+                    row(f.name + ':', devText);
+                });
+                y += 2;
+            }
+
+            // Velocidad post
+            if (afterDownPdf || afterUpPdf) {
+                sectionTitle('VELOCIDAD POST-INSTALACIÓN');
+                var prevDown2 = parseFloat(document.getElementById('speedAtRouter').value);
+                var newDown2  = parseFloat(afterDownPdf);
+                var downLabel = afterDownPdf ? afterDownPdf + ' Mbps' + (!isNaN(prevDown2) && !isNaN(newDown2) && newDown2 > prevDown2 ? '  (+' + Math.round(newDown2 - prevDown2) + ' Mbps ✅)' : '') : '-';
+                row('Bajada:', downLabel);
+                row('Subida:', afterUpPdf ? afterUpPdf + ' Mbps' : '-');
+                y += 2;
+            }
+
+            // Tabla comparativa
+            var hasAfterMeasPdf = afterRoomsPdf.some(function(r){ return !isNaN(r.afterDbm) || !isNaN(r.afterDown); });
+            if (hasAfterMeasPdf) {
+                checkY(20);
+                sectionTitle('COMPARACIÓN POR AMBIENTE');
+
+                var tableData = [];
+                afterRoomsPdf.forEach(function(r) {
+                    var antesDbm  = isNaN(r.beforeDbm)  ? '-' : r.beforeDbm  + ' dBm';
+                    var despDbm   = isNaN(r.afterDbm)   ? '-' : r.afterDbm   + ' dBm';
+                    var mejoraDbm = (!isNaN(r.beforeDbm) && !isNaN(r.afterDbm) && r.afterDbm > r.beforeDbm)
+                        ? '+' + Math.abs(r.afterDbm - r.beforeDbm) + ' dBm ✅' : '';
+                    var antesVel  = isNaN(r.beforeDown) ? '-' : r.beforeDown + ' Mbps';
+                    var despVel   = isNaN(r.afterDown)  ? '-' : r.afterDown  + ' Mbps';
+                    var mejoraVel = (!isNaN(r.beforeDown) && !isNaN(r.afterDown) && r.afterDown > r.beforeDown)
+                        ? '+' + Math.round(r.afterDown - r.beforeDown) + ' Mbps ✅' : '';
+                    tableData.push([r.name, antesDbm, despDbm, mejoraDbm, antesVel, despVel, mejoraVel]);
+                });
+
+                doc.autoTable({
+                    startY: y,
+                    head: [['Ambiente', 'Señal antes', 'Señal después', 'Mejora', 'Vel. antes', 'Vel. después', 'Mejora']],
+                    body: tableData,
+                    margin: { left: margin, right: margin },
+                    styles: { fontSize: 7.5, cellPadding: 2 },
+                    headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [240, 253, 244] },
+                    didParseCell: function(data) {
+                        if ((data.column.index === 3 || data.column.index === 6) && data.section === 'body') {
+                            if (data.cell.raw && data.cell.raw.indexOf('✅') >= 0) {
+                                data.cell.styles.textColor = [22, 163, 74];
+                                data.cell.styles.fontStyle = 'bold';
+                            }
+                        }
+                    }
+                });
+                y = doc.lastAutoTable.finalY + 6;
+            }
         }
 
         // ── FIRMA ──
