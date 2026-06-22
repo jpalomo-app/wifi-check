@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,7 @@
             color: #1a202c;
         }
         .header {
-            background: #2563eb;
+            background: #66257C;
             color: white;
             padding: 16px 20px 12px;
             position: sticky;
@@ -42,7 +42,7 @@
         .card-title {
             font-size: 15px;
             font-weight: 700;
-            color: #1e40af;
+            color: #4A1565;
             margin-bottom: 14px;
         }
 
@@ -69,7 +69,7 @@
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #2563eb;
+            border-color: #66257C;
             background: white;
         }
 
@@ -87,7 +87,7 @@
         .option-item input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            accent-color: #2563eb;
+            accent-color: #66257C;
             flex-shrink: 0;
         }
         .option-item span { font-size: 14px; }
@@ -99,7 +99,7 @@
             margin-bottom: 13px;
             line-height: 1.5;
         }
-        .alert-info { background: #eff6ff; color: #1d4ed8; border-left: 3px solid #2563eb; }
+        .alert-info { background: #fdf4ff; color: #5B1A72; border-left: 3px solid #66257C; }
 
         /* Room cards */
         .room-card {
@@ -115,7 +115,7 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .room-title { font-weight: 600; font-size: 14px; color: #1e40af; }
+        .room-title { font-weight: 600; font-size: 14px; color: #4A1565; }
         .btn-remove {
             background: #fee2e2;
             color: #dc2626;
@@ -150,9 +150,9 @@
         .btn-add {
             width: 100%;
             padding: 12px;
-            background: #eff6ff;
-            color: #2563eb;
-            border: 2px dashed #93c5fd;
+            background: #fdf4ff;
+            color: #66257C;
+            border: 2px dashed #d8b4fe;
             border-radius: 10px;
             font-size: 14px;
             font-weight: 600;
@@ -189,14 +189,14 @@
         .btn-next {
             flex: 2;
             padding: 14px;
-            background: #2563eb;
+            background: #66257C;
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+            box-shadow: 0 2px 8px rgba(102,37,124,0.3);
         }
 
         /* Diagnosis */
@@ -287,7 +287,7 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .floor-title { font-weight: 600; font-size: 14px; color: #0369a1; }
+        .floor-title { font-weight: 600; font-size: 14px; color: #66257C; }
         .device-row {
             display: grid;
             grid-template-columns: 2fr 3fr;
@@ -397,7 +397,10 @@
 <body>
 
 <div class="header">
-    <h1>📶 WiFi Check Pro</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h1>📶 WiFi Check Pro</h1>
+        <img src="sista.png" alt="Sista" style="height:26px;border-radius:5px;background:white;padding:3px 7px;">
+    </div>
     <div class="subtitle" id="stepSubtitle">Relevamiento de red WiFi</div>
     <div class="progress-bar">
         <div class="progress-fill" id="progressFill" style="width:0%"></div>
@@ -661,6 +664,7 @@
 </div>
 
 <script>
+    var SISTA_LOGO = 'data:image/png;base64,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';
     let currentStep = 1;
     const totalSteps = 8;
     let roomCount = 0;
@@ -1275,8 +1279,9 @@
             doc.addPage();
             y = 14;
             // header en cada página
-            doc.setFillColor(37, 99, 235);
+            doc.setFillColor(102, 37, 124);
             doc.rect(0, 0, W, 10, 'F');
+            doc.addImage(SISTA_LOGO, 'PNG', W - margin - 20, 1, 20, 8.4);
             doc.setFontSize(8); doc.setTextColor(255,255,255);
             doc.text('WiFi Check Pro — Informe de Relevamiento', margin, 7);
             y = 16;
@@ -1288,9 +1293,9 @@
 
         function sectionTitle(text) {
             checkY(10);
-            doc.setFillColor(239, 246, 255);
+            doc.setFillColor(253, 244, 255);
             doc.rect(margin, y, W - margin*2, 7, 'F');
-            doc.setFontSize(10); doc.setTextColor(30, 64, 175);
+            doc.setFontSize(10); doc.setTextColor(74, 21, 101);
             doc.setFont('helvetica', 'bold');
             doc.text(text, margin + 2, y + 5);
             doc.setFont('helvetica', 'normal');
@@ -1320,18 +1325,20 @@
         }
 
         // ── PORTADA / HEADER ──
-        doc.setFillColor(37, 99, 235);
-        doc.rect(0, 0, W, 28, 'F');
-        doc.setFontSize(18); doc.setTextColor(255,255,255);
+        doc.setFillColor(102, 37, 124);
+        doc.rect(0, 0, W, 32, 'F');
+        // Logo Sista (ancho=36mm, alto=15mm para mantener proporción 199:83)
+        doc.addImage(SISTA_LOGO, 'PNG', W - margin - 36, 2, 36, 15);
+        doc.setFontSize(16); doc.setTextColor(255,255,255);
         doc.setFont('helvetica', 'bold');
-        doc.text('INFORME DE RELEVAMIENTO WiFi', margin, 16);
+        doc.text('INFORME DE RELEVAMIENTO WiFi', margin, 15);
         doc.setFontSize(9); doc.setFont('helvetica', 'normal');
 
         var now = new Date();
         var fecha = now.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
         var hora  = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
-        doc.text('Generado: ' + fecha + ' ' + hora, margin, 24);
-        y = 36;
+        doc.text('Generado: ' + fecha + ' ' + hora, margin, 27);
+        y = 40;
 
         // ── DATOS DEL CLIENTE ──
         var client     = document.getElementById('clientName').value     || '-';
@@ -1413,7 +1420,7 @@
             body: tableRows,
             margin: { left: margin, right: margin },
             styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [102, 37, 124], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [248, 250, 252] },
             didParseCell: function(data) {
                 if (data.column.index === 2 && data.section === 'body') {
