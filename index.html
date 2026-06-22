@@ -520,14 +520,27 @@
     <div class="step" id="step4">
         <div class="phase-banner phase-antes">📋 ANTES — Estado actual del cliente</div>
         <div class="card">
-            <div class="card-title">⚡ Velocidad junto al router</div>
+            <div class="card-title">⚡ Velocidad junto al MÓDEM (ISP)</div>
+            <div class="alert alert-info" style="margin-bottom:8px">Medí con la app speedtest conectado al WiFi del módem directamente.</div>
             <div class="form-group">
                 <label>Bajada (Mbps)</label>
-                <input type="number" id="speedAtRouter" placeholder="Ej: 95">
+                <input type="number" id="speedAtRouter" placeholder="Ej: 300">
             </div>
             <div class="form-group">
                 <label>Subida (Mbps)</label>
                 <input type="number" id="uploadAtRouter" placeholder="Ej: 50">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">⚡ Velocidad junto al ROUTER</div>
+            <div class="alert alert-info" style="margin-bottom:8px">Medí conectado al WiFi del router secundario.</div>
+            <div class="form-group">
+                <label>Bajada (Mbps)</label>
+                <input type="number" id="speedAtRouter2" placeholder="Ej: 95">
+            </div>
+            <div class="form-group">
+                <label>Subida (Mbps)</label>
+                <input type="number" id="uploadAtRouter2" placeholder="Ej: 30">
             </div>
         </div>
         <div class="card">
@@ -592,6 +605,10 @@
                 <label class="option-item"><input type="checkbox" class="problem" value="appliances"> <span>Electrodomésticos generando interferencia</span></label>
             </div>
 
+            <div class="form-group">
+                <label>Recomendaciones (una por línea)</label>
+                <textarea id="customRecs" rows="4" placeholder="Ej: Instalar nodo MESH en planta alta&#10;Cambiar canal WiFi a canal 6&#10;Reubicar el router al centro"></textarea>
+            </div>
             <div class="form-group">
                 <label>Observaciones adicionales</label>
                 <textarea id="extraNotes" rows="3" placeholder="Cualquier detalle importante..."></textarea>
@@ -1099,8 +1116,10 @@
         var mountMap = { open:'Sobre mueble/pared', furniture:'Dentro de mueble cerrado', behind:'Detrás de TV/equipo', closet:'En placard/caja' };
         var mountText = mountEl ? (mountMap[mountEl.value] || '-') : '-';
 
-        var speedDown = document.getElementById('speedAtRouter').value || '-';
-        var speedUp   = document.getElementById('uploadAtRouter').value || '-';
+        var speedDown  = document.getElementById('speedAtRouter').value || '-';
+        var speedUp    = document.getElementById('uploadAtRouter').value || '-';
+        var speedDown2 = document.getElementById('speedAtRouter2').value || '-';
+        var speedUp2   = document.getElementById('uploadAtRouter2').value || '-';
         var ch24      = document.getElementById('channel24').value || 'No revisado';
         var congMap   = { low:'Baja (1-2 redes)', mid:'Media (3-5 redes)', high:'Alta (6+ redes)', '':'No revisado' };
         var cong      = congMap[document.getElementById('congestion24').value] || 'No revisado';
@@ -1172,16 +1191,21 @@
         }).join('');
 
         // --- Recommendations ---
+        var customRecsRaw = document.getElementById('customRecs').value.trim();
         var recs = [];
-        if (posEl && posEl.value === 'corner') recs.push('• Reubicar el router al centro del domicilio');
-        if (mountEl && (mountEl.value === 'furniture' || mountEl.value === 'closet' || mountEl.value === 'behind')) recs.push('• Sacar el router del mueble/placard y colocarlo en lugar abierto');
-        if (document.getElementById('congestion24').value === 'high') recs.push('• Cambiar el canal WiFi 2.4GHz a uno menos congestionado');
-        if (badRooms.length >= 1) recs.push('• Agregar nodo MESH o Access Point para mejorar cobertura');
-        if (problems.indexOf('bad_repeater') >= 0) recs.push('• Reemplazar el repetidor por un sistema MESH');
-        if (document.getElementById('routerAge').value === 'veryold') recs.push('• Evaluar reemplazo del router por equipo más moderno');
-        if (has5gNone) recs.push('• Reemplazar equipos por modelos dual-band con banda 5GHz');
-        else if (!has5gAny) recs.push('• Verificar soporte de banda 5GHz en los equipos');
-        if (recs.length === 0) recs.push('• No se requieren cambios. La red funciona correctamente.');
+        if (customRecsRaw) {
+            recs = customRecsRaw.split('\n').map(function(l){ return '• ' + l.trim(); }).filter(function(l){ return l.length > 2; });
+        } else {
+            if (posEl && posEl.value === 'corner') recs.push('• Reubicar el router al centro del domicilio');
+            if (mountEl && (mountEl.value === 'furniture' || mountEl.value === 'closet' || mountEl.value === 'behind')) recs.push('• Sacar el router del mueble/placard y colocarlo en lugar abierto');
+            if (document.getElementById('congestion24').value === 'high') recs.push('• Cambiar el canal WiFi 2.4GHz a uno menos congestionado');
+            if (badRooms.length >= 1) recs.push('• Agregar nodo MESH o Access Point para mejorar cobertura');
+            if (problems.indexOf('bad_repeater') >= 0) recs.push('• Reemplazar el repetidor por un sistema MESH');
+            if (document.getElementById('routerAge').value === 'veryold') recs.push('• Evaluar reemplazo del router por equipo más moderno');
+            if (has5gNone) recs.push('• Reemplazar equipos por modelos dual-band con banda 5GHz');
+            else if (!has5gAny) recs.push('• Verificar soporte de banda 5GHz en los equipos');
+            if (recs.length === 0) recs.push('• No se requieren cambios. La red funciona correctamente.');
+        }
 
         // --- Build text ---
         var extras = [];
@@ -1215,9 +1239,15 @@
             txt += '\n';
         }
 
-        txt += '⚡ VELOCIDAD EN EL ROUTER\n';
+        txt += '⚡ VELOCIDAD EN EL MÓDEM (ISP)\n';
         txt += '• Bajada: ' + speedDown + ' Mbps\n';
-        txt += '• Subida: ' + speedUp + ' Mbps\n\n';
+        txt += '• Subida: ' + speedUp + ' Mbps\n';
+        if (speedDown2 !== '-' || speedUp2 !== '-') {
+            txt += '⚡ VELOCIDAD EN EL ROUTER\n';
+            txt += '• Bajada: ' + speedDown2 + ' Mbps\n';
+            txt += '• Subida: ' + speedUp2 + ' Mbps\n';
+        }
+        txt += '\n';
 
         txt += '📊 MEDICIÓN POR AMBIENTE\n';
         rooms.forEach(function(r) {
@@ -1452,13 +1482,21 @@
             y += 2;
         }
 
-        // ── VELOCIDAD EN EL ROUTER ──
-        var speedDown = document.getElementById('speedAtRouter').value;
-        var speedUp   = document.getElementById('uploadAtRouter').value;
-        sectionTitle('VELOCIDAD EN EL ROUTER');
+        // ── VELOCIDADES (MÓDEM y ROUTER) ──
+        var speedDown  = document.getElementById('speedAtRouter').value;
+        var speedUp    = document.getElementById('uploadAtRouter').value;
+        var speedDown2 = document.getElementById('speedAtRouter2').value;
+        var speedUp2   = document.getElementById('uploadAtRouter2').value;
+        sectionTitle('VELOCIDAD EN EL MÓDEM (ISP)');
         row('Bajada:', speedDown ? speedDown + ' Mbps' : '-');
         row('Subida:', speedUp ? speedUp + ' Mbps' : '-');
         y += 2;
+        if (speedDown2 || speedUp2) {
+            sectionTitle('VELOCIDAD EN EL ROUTER');
+            row('Bajada:', speedDown2 ? speedDown2 + ' Mbps' : '-');
+            row('Subida:', speedUp2 ? speedUp2 + ' Mbps' : '-');
+            y += 2;
+        }
 
         // ── MEDICIÓN POR AMBIENTE (tabla) ──
         var rooms = getRooms();
@@ -1532,18 +1570,23 @@
         }
 
         // ── RECOMENDACIONES ──
+        var customRecsRaw = document.getElementById('customRecs').value.trim();
         var recs = [];
-        if (posEl && posEl.value === 'corner') recs.push('Reubicar el router al centro del domicilio');
-        if (mountEl && (mountEl.value === 'furniture' || mountEl.value === 'closet' || mountEl.value === 'behind')) recs.push('Sacar el router del mueble/placard y colocarlo en lugar abierto');
-        if (document.getElementById('congestion24').value === 'high') recs.push('Cambiar el canal WiFi 2.4GHz a uno menos congestionado');
-        var badRooms2 = rooms.filter(function(r){ return !isNaN(r.dbm) && r.dbm <= -80; });
-        var hasDeadZones2 = problems.indexOf('dead_zones') >= 0;
-        if (hasDeadZones2 || badRooms2.length >= 1) recs.push('Agregar nodo MESH o Access Point para mejorar cobertura');
-        if (problems.indexOf('bad_repeater') >= 0) recs.push('Reemplazar el repetidor por un sistema MESH');
-        if (document.getElementById('routerAge').value === 'veryold') recs.push('Evaluar reemplazo del router por equipo más moderno');
-        if (has5gNonePdf) recs.push('Reemplazar equipos por modelos dual-band con banda 5GHz');
-        else if (!has5gAnyPdf) recs.push('Verificar soporte de banda 5GHz en los equipos');
-        if (recs.length === 0) recs.push('No se requieren cambios. La red funciona correctamente.');
+        if (customRecsRaw) {
+            recs = customRecsRaw.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
+        } else {
+            if (posEl && posEl.value === 'corner') recs.push('Reubicar el router al centro del domicilio');
+            if (mountEl && (mountEl.value === 'furniture' || mountEl.value === 'closet' || mountEl.value === 'behind')) recs.push('Sacar el router del mueble/placard y colocarlo en lugar abierto');
+            if (document.getElementById('congestion24').value === 'high') recs.push('Cambiar el canal WiFi 2.4GHz a uno menos congestionado');
+            var badRooms2 = rooms.filter(function(r){ return !isNaN(r.dbm) && r.dbm <= -80; });
+            var hasDeadZones2 = problems.indexOf('dead_zones') >= 0;
+            if (hasDeadZones2 || badRooms2.length >= 1) recs.push('Agregar nodo MESH o Access Point para mejorar cobertura');
+            if (problems.indexOf('bad_repeater') >= 0) recs.push('Reemplazar el repetidor por un sistema MESH');
+            if (document.getElementById('routerAge').value === 'veryold') recs.push('Evaluar reemplazo del router por equipo más moderno');
+            if (has5gNonePdf) recs.push('Reemplazar equipos por modelos dual-band con banda 5GHz');
+            else if (!has5gAnyPdf) recs.push('Verificar soporte de banda 5GHz en los equipos');
+            if (recs.length === 0) recs.push('No se requieren cambios. La red funciona correctamente.');
+        }
 
         checkY(10 + recs.length * 6);
         sectionTitle('RECOMENDACIONES');
@@ -1553,11 +1596,11 @@
         // ── OBSERVACIONES ──
         var extra = document.getElementById('extraNotes').value;
         if (extra) {
-            checkY(20);
+            checkY(8);
             sectionTitle('OBSERVACIONES');
             doc.setFontSize(9); doc.setTextColor(26, 32, 44);
-            var lines = doc.splitTextToSize(extra, W - margin*2 - 4);
-            lines.forEach(function(line) { checkY(5); doc.text(line, margin + 2, y); y += 5; });
+            var obsLines = doc.splitTextToSize(extra, W - margin*2 - 4);
+            obsLines.forEach(function(line) { checkY(5); doc.text(line, margin + 2, y); y += 5; });
             y += 2;
         }
 
@@ -1571,15 +1614,16 @@
                              afterDownPdf || afterUpPdf;
 
         if (hasAfterData) {
-            addPage();
-            // Banner DESPUÉS
+            checkY(50);
+            // Separador y banner DESPUÉS
+            y += 4;
             doc.setFillColor(22, 163, 74);
-            doc.rect(0, 0, W, 10, 'F');
+            doc.rect(margin, y, W - margin*2, 8, 'F');
             doc.setFontSize(10); doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.text('✅  DESPUÉS — MEJORAS REALIZADAS', margin, 7);
+            doc.text('DESPUES - MEJORAS REALIZADAS', margin + 3, y + 5.5);
             doc.setFont('helvetica', 'normal');
-            y = 18;
+            y += 13;
 
             // Equipamiento instalado
             if (afterFloorsPdf.length > 0) {
@@ -1596,7 +1640,7 @@
                 sectionTitle('VELOCIDAD POST-INSTALACIÓN');
                 var prevDown2 = parseFloat(document.getElementById('speedAtRouter').value);
                 var newDown2  = parseFloat(afterDownPdf);
-                var downLabel = afterDownPdf ? afterDownPdf + ' Mbps' + (!isNaN(prevDown2) && !isNaN(newDown2) && newDown2 > prevDown2 ? '  (+' + Math.round(newDown2 - prevDown2) + ' Mbps ✅)' : '') : '-';
+                var downLabel = afterDownPdf ? afterDownPdf + ' Mbps' + (!isNaN(prevDown2) && !isNaN(newDown2) && newDown2 > prevDown2 ? '  (+ ' + Math.round(newDown2 - prevDown2) + ' Mbps)' : '') : '-';
                 row('Bajada:', downLabel);
                 row('Subida:', afterUpPdf ? afterUpPdf + ' Mbps' : '-');
                 y += 2;
@@ -1613,11 +1657,11 @@
                     var antesDbm  = isNaN(r.beforeDbm)  ? '-' : r.beforeDbm  + ' dBm';
                     var despDbm   = isNaN(r.afterDbm)   ? '-' : r.afterDbm   + ' dBm';
                     var mejoraDbm = (!isNaN(r.beforeDbm) && !isNaN(r.afterDbm) && r.afterDbm > r.beforeDbm)
-                        ? '+' + Math.abs(r.afterDbm - r.beforeDbm) + ' dBm ✅' : '';
+                        ? '+ ' + Math.abs(r.afterDbm - r.beforeDbm) + ' dBm' : '';
                     var antesVel  = isNaN(r.beforeDown) ? '-' : r.beforeDown + ' Mbps';
                     var despVel   = isNaN(r.afterDown)  ? '-' : r.afterDown  + ' Mbps';
                     var mejoraVel = (!isNaN(r.beforeDown) && !isNaN(r.afterDown) && r.afterDown > r.beforeDown)
-                        ? '+' + Math.round(r.afterDown - r.beforeDown) + ' Mbps ✅' : '';
+                        ? '+ ' + Math.round(r.afterDown - r.beforeDown) + ' Mbps' : '';
                     tableData.push([r.name, antesDbm, despDbm, mejoraDbm, antesVel, despVel, mejoraVel]);
                 });
 
@@ -1631,7 +1675,7 @@
                     alternateRowStyles: { fillColor: [240, 253, 244] },
                     didParseCell: function(data) {
                         if ((data.column.index === 3 || data.column.index === 6) && data.section === 'body') {
-                            if (data.cell.raw && data.cell.raw.indexOf('✅') >= 0) {
+                            if (data.cell.raw && (data.cell.raw.indexOf('+ ') === 0 || data.cell.raw.indexOf('+') === 0)) {
                                 data.cell.styles.textColor = [22, 163, 74];
                                 data.cell.styles.fontStyle = 'bold';
                             }
