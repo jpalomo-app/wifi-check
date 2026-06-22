@@ -1640,7 +1640,7 @@
                 sectionTitle('VELOCIDAD POST-INSTALACIÓN');
                 var prevDown2 = parseFloat(document.getElementById('speedAtRouter').value);
                 var newDown2  = parseFloat(afterDownPdf);
-                var downLabel = afterDownPdf ? afterDownPdf + ' Mbps' + (!isNaN(prevDown2) && !isNaN(newDown2) && newDown2 > prevDown2 ? '  (+ ' + Math.round(newDown2 - prevDown2) + ' Mbps)' : '') : '-';
+                var downLabel = afterDownPdf ? afterDownPdf + ' Mbps' + (!isNaN(prevDown2) && !isNaN(newDown2) && newDown2 > prevDown2 ? '  (+ ' + Math.round(newDown2 - prevDown2) + ' Mbps OK)' : '') : '-';
                 row('Bajada:', downLabel);
                 row('Subida:', afterUpPdf ? afterUpPdf + ' Mbps' : '-');
                 y += 2;
@@ -1656,12 +1656,28 @@
                 afterRoomsPdf.forEach(function(r) {
                     var antesDbm  = isNaN(r.beforeDbm)  ? '-' : r.beforeDbm  + ' dBm';
                     var despDbm   = isNaN(r.afterDbm)   ? '-' : r.afterDbm   + ' dBm';
-                    var mejoraDbm = (!isNaN(r.beforeDbm) && !isNaN(r.afterDbm) && r.afterDbm > r.beforeDbm)
-                        ? '+ ' + Math.abs(r.afterDbm - r.beforeDbm) + ' dBm' : '';
+                    var mejoraDbm;
+                    if (isNaN(r.beforeDbm) || isNaN(r.afterDbm)) {
+                        mejoraDbm = '-';
+                    } else if (r.afterDbm > r.beforeDbm) {
+                        mejoraDbm = '+ ' + Math.abs(r.afterDbm - r.beforeDbm) + ' dBm (OK)';
+                    } else if (r.afterDbm === r.beforeDbm) {
+                        mejoraDbm = 'Sin cambio';
+                    } else {
+                        mejoraDbm = r.afterDbm - r.beforeDbm + ' dBm';
+                    }
                     var antesVel  = isNaN(r.beforeDown) ? '-' : r.beforeDown + ' Mbps';
                     var despVel   = isNaN(r.afterDown)  ? '-' : r.afterDown  + ' Mbps';
-                    var mejoraVel = (!isNaN(r.beforeDown) && !isNaN(r.afterDown) && r.afterDown > r.beforeDown)
-                        ? '+ ' + Math.round(r.afterDown - r.beforeDown) + ' Mbps' : '';
+                    var mejoraVel;
+                    if (isNaN(r.beforeDown) || isNaN(r.afterDown)) {
+                        mejoraVel = '-';
+                    } else if (r.afterDown > r.beforeDown) {
+                        mejoraVel = '+ ' + Math.round(r.afterDown - r.beforeDown) + ' Mbps (OK)';
+                    } else if (r.afterDown === r.beforeDown) {
+                        mejoraVel = 'Sin cambio';
+                    } else {
+                        mejoraVel = Math.round(r.afterDown - r.beforeDown) + ' Mbps';
+                    }
                     tableData.push([r.name, antesDbm, despDbm, mejoraDbm, antesVel, despVel, mejoraVel]);
                 });
 
@@ -1675,9 +1691,13 @@
                     alternateRowStyles: { fillColor: [240, 253, 244] },
                     didParseCell: function(data) {
                         if ((data.column.index === 3 || data.column.index === 6) && data.section === 'body') {
-                            if (data.cell.raw && (data.cell.raw.indexOf('+ ') === 0 || data.cell.raw.indexOf('+') === 0)) {
+                            var raw = data.cell.raw || '';
+                            if (raw.indexOf('+ ') === 0) {
                                 data.cell.styles.textColor = [22, 163, 74];
                                 data.cell.styles.fontStyle = 'bold';
+                            } else if (raw === 'Sin cambio') {
+                                data.cell.styles.textColor = [107, 114, 128];
+                                data.cell.styles.fontStyle = 'italic';
                             }
                         }
                     }
