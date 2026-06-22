@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>WiFi Check Pro</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            color: #1a202c;
+        }
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 16px 20px 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header h1 { font-size: 18px; font-weight: 700; }
+        .header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+        .progress-bar { background: rgba(255,255,255,0.3); height: 4px; border-radius: 2px; margin-top: 10px; }
+        .progress-fill { background: white; height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+        .step-indicator { font-size: 11px; opacity: 0.9; margin-top: 5px; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 16px 16px 0; }
+
+        .step { display: none; }
+        .step.active { display: block; }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 14px;
+        }
+
+        .form-group { margin-bottom: 14px; }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #1a202c;
+            background: #fafafa;
+            -webkit-appearance: none;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+        }
+
+        .option-group { display: flex; flex-direction: column; gap: 7px; }
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .option-item input[type="radio"],
+        .option-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #2563eb;
+            flex-shrink: 0;
+        }
+        .option-item span { font-size: 14px; }
+
+        .alert {
+            padding: 10px 13px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 13px;
+            line-height: 1.5;
+        }
+        .alert-info { background: #eff6ff; color: #1d4ed8; border-left: 3px solid #2563eb; }
+
+        /* Room cards */
+        .room-card {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 13px;
+            margin-bottom: 10px;
+        }
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .room-title { font-weight: 600; font-size: 14px; color: #1e40af; }
+        .btn-remove {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .room-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .room-grid .form-group { margin-bottom: 0; }
+        .room-grid label { font-size: 11px; }
+        .room-grid input { font-size: 14px; padding: 8px; }
+        .signal-indicator { text-align: center; margin-top: 7px; font-size: 12px; min-height: 20px; }
+        .signal-badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .signal-excellent { background: #d1fae5; color: #065f46; }
+        .signal-good { background: #fef3c7; color: #92400e; }
+        .signal-ok { background: #fed7aa; color: #9a3412; }
+        .signal-bad { background: #fee2e2; color: #991b1b; }
+
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            background: #eff6ff;
+            color: #2563eb;
+            border: 2px dashed #93c5fd;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .section-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+            margin-bottom: 8px;
+            margin-top: 4px;
+        }
+
+        /* Nav */
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            padding-bottom: 30px;
+        }
+        .btn-back {
+            flex: 1;
+            padding: 14px;
+            background: white;
+            color: #374151;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-next {
+            flex: 2;
+            padding: 14px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+        }
+
+        /* Diagnosis */
+        .diagnosis-card {
+            padding: 13px;
+            border-radius: 10px;
+            margin-bottom: 9px;
+        }
+        .diagnosis-good { background: #d1fae5; border-left: 4px solid #059669; }
+        .diagnosis-warn { background: #fef3c7; border-left: 4px solid #f59e0b; }
+        .diagnosis-bad { background: #fee2e2; border-left: 4px solid #dc2626; }
+        .diagnosis-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+        .diagnosis-desc { font-size: 13px; line-height: 1.4; }
+
+        /* Report */
+        .report-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        .btn-copy {
+            width: 100%;
+            padding: 14px;
+            background: #059669;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-whatsapp {
+            width: 100%;
+            padding: 14px;
+            background: #25d366;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-new {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            color: #374151;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .copied-msg {
+            text-align: center;
+            color: #059669;
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+        .ref-box {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>📶 WiFi Check Pro</h1>
+    <div class="subtitle" id="stepSubtitle">Relevamiento de red WiFi</div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="step-indicator" id="stepIndicator">Paso 1 de 6</div>
+</div>
+
+<div class="container">
+
+    <!-- PASO 1: Datos del cliente -->
+    <div class="step active" id="step1">
+        <div class="card">
+            <div class="card-title">👤 Datos del cliente</div>
+            <div class="form-group">
+                <label>Nombre / Empresa</label>
+                <input type="text" id="clientName" placeholder="Ej: Juan García">
+            </div>
+            <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="clientAddress" placeholder="Calle, número, piso...">
+            </div>
+            <div class="form-group">
+                <label>Técnico</label>
+                <input type="text" id="techName" placeholder="Tu nombre">
+            </div>
+            <div class="form-group">
+                <label>ISP (proveedor)</label>
+                <input type="text" id="ispName" placeholder="Ej: Fibertel, Telecentro, Claro...">
+            </div>
+            <div class="form-group">
+                <label>Velocidad contratada (Mbps)</label>
+                <input type="number" id="contractedSpeed" placeholder="Ej: 100">
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 2: Equipamiento -->
+    <div class="step" id="step2">
+        <div class="card">
+            <div class="card-title">📡 Equipo actual</div>
+            <div class="form-group">
+                <label>Modelo del router/módem</label>
+                <input type="text" id="routerModel" placeholder="Ej: TP-Link Archer C6">
+            </div>
+            <div class="form-group">
+                <label>Antigüedad aproximada</label>
+                <select id="routerAge">
+                    <option value="">Seleccionar...</option>
+                    <option value="new">Menos de 1 año</option>
+                    <option value="mid">1 a 3 años</option>
+                    <option value="old">3 a 5 años</option>
+                    <option value="veryold">Más de 5 años</option>
+                    <option value="unknown">No sabe</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>¿Tiene equipos adicionales?</label>
+                <div class="option-group">
+                    <label class="option-item"><input type="checkbox" id="hasRepeater"> <span>Repetidor WiFi</span></label>
+                    <label class="option-item"><input type="checkbox" id="hasMesh"> <span>Sistema MESH</span></label>
+                    <label class="option-item"><input type="checkbox" id="hasAP"> <span>Access Point adicional</span></label>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📍 Ubicación del router</div>
+            <div class="form-group">
+                <label>Posición en el domicilio</label>
+                <div class="option-group">
+                    <label class="option-item"><input type="radio" name="routerPos" value="center"> <span>✅ Centro de la casa</span></label>
+                    <label class="option-item"><input type="radio" name="routerPos" value="middle"> <span>⚠️ Zona intermedia</span></label>
+                    <label class="option-item"><input type="radio" name="routerPos" value="corner"> <span>❌ Rincón / extremo</span></label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>¿Cómo está montado?</label>
+                <div class="option-group">
+                    <label class="option-item"><input type="radio" name="routerMount" value="open"> <span>✅ Sobre mueble abierto o pared</span></label>
+                    <label class="option-item"><input type="radio" name="routerMount" value="furniture"> <span>❌ Dentro de mueble cerrado</span></label>
+                    <label class="option-item"><input type="radio" name="routerMount" value="behind"> <span>❌ Detrás de TV u otro equipo</span></label>
+                    <label class="option-item"><input type="radio" name="routerMount" value="closet"> <span>❌ En placard o caja</span></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 3: Mediciones -->
+    <div class="step" id="step3">
+        <div class="card">
+            <div class="card-title">📊 Señal por ambiente</div>
+            <div class="alert alert-info">
+                Usá <strong>WiFi Analyzer</strong> para el dBm y <strong>Speedtest</strong> para la velocidad en cada ambiente.
+            </div>
+            <div id="roomList"></div>
+            <button class="btn-add" onclick="addRoom()">+ Agregar ambiente</button>
+        </div>
+        <div class="card">
+            <div class="ref-box">
+                <strong>Referencia dBm</strong><br>
+                🟢 Mayor a -60 → Excelente<br>
+                🟡 -60 a -70 → Buena<br>
+                🟠 -70 a -80 → Aceptable<br>
+                🔴 Menor a -80 → Problemática
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 4: Análisis WiFi -->
+    <div class="step" id="step4">
+        <div class="card">
+            <div class="card-title">⚡ Velocidad junto al router</div>
+            <div class="form-group">
+                <label>Bajada (Mbps)</label>
+                <input type="number" id="speedAtRouter" placeholder="Ej: 95">
+            </div>
+            <div class="form-group">
+                <label>Subida (Mbps)</label>
+                <input type="number" id="uploadAtRouter" placeholder="Ej: 50">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📡 Análisis de canales</div>
+            <div class="alert alert-info">Revisá con WiFi Analyzer.</div>
+            <div class="form-group">
+                <label>Canal actual 2.4GHz</label>
+                <select id="channel24">
+                    <option value="">No revisado</option>
+                    <option value="1">Canal 1</option>
+                    <option value="6">Canal 6</option>
+                    <option value="11">Canal 11</option>
+                    <option value="other">Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Redes vecinas en el mismo canal</label>
+                <select id="congestion24">
+                    <option value="">No revisado</option>
+                    <option value="low">Pocas (1-2 redes)</option>
+                    <option value="mid">Algunas (3-5 redes)</option>
+                    <option value="high">Muchas (6 o más)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>¿El router emite 5GHz?</label>
+                <div class="option-group">
+                    <label class="option-item"><input type="radio" name="has5g" value="yes"> <span>Sí</span></label>
+                    <label class="option-item"><input type="radio" name="has5g" value="no"> <span>No</span></label>
+                    <label class="option-item"><input type="radio" name="has5g" value="unknown"> <span>No verificado</span></label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>¿2.4GHz y 5GHz tienen el mismo nombre?</label>
+                <div class="option-group">
+                    <label class="option-item"><input type="radio" name="sameSsid" value="yes"> <span>Sí, mismo nombre</span></label>
+                    <label class="option-item"><input type="radio" name="sameSsid" value="no"> <span>No, nombres distintos</span></label>
+                    <label class="option-item"><input type="radio" name="sameSsid" value="unknown"> <span>No revisado</span></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 5: Problemas -->
+    <div class="step" id="step5">
+        <div class="card">
+            <div class="card-title">🔍 Problemas detectados</div>
+
+            <div class="section-label">Señal</div>
+            <div class="option-group" style="margin-bottom:14px;">
+                <label class="option-item"><input type="checkbox" class="problem" value="dead_zones"> <span>Zonas sin cobertura o señal crítica</span></label>
+                <label class="option-item"><input type="checkbox" class="problem" value="slow_speed"> <span>Velocidad muy inferior a la contratada</span></label>
+                <label class="option-item"><input type="checkbox" class="problem" value="unstable"> <span>Señal inestable / se desconecta</span></label>
+            </div>
+
+            <div class="section-label">Equipamiento</div>
+            <div class="option-group" style="margin-bottom:14px;">
+                <label class="option-item"><input type="checkbox" class="problem" value="bad_location"> <span>Router en mala ubicación</span></label>
+                <label class="option-item"><input type="checkbox" class="problem" value="old_router"> <span>Router muy antiguo o de gama baja</span></label>
+                <label class="option-item"><input type="checkbox" class="problem" value="bad_repeater"> <span>Repetidor que degrada la velocidad</span></label>
+                <label class="option-item"><input type="checkbox" class="problem" value="obstructed"> <span>Equipo dentro de mueble o placard</span></label>
+            </div>
+
+            <div class="section-label">Interferencia</div>
+            <div class="option-group" style="margin-bottom:14px;">
+                <label class="option-item"><input type="checkbox" class="problem" value="congested_channel"> <span>Canal 2.4GHz muy congestionado</span></label>
+                <label class="option-item"><input type="checkbox" class="problem" value="thick_walls"> <span>Paredes de hormigón bloqueando señal</span></label>
+                <label class="option-item"><input type="checkbox" class="problem" value="appliances"> <span>Electrodomésticos generando interferencia</span></label>
+            </div>
+
+            <div class="form-group">
+                <label>Observaciones adicionales</label>
+                <textarea id="extraNotes" rows="3" placeholder="Cualquier detalle importante..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 6: Informe -->
+    <div class="step" id="step6">
+        <div class="card">
+            <div class="card-title">✅ Diagnóstico</div>
+            <div id="diagnosisArea"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">📋 Informe</div>
+            <div class="report-box" id="reportText"></div>
+            <div class="copied-msg" id="copiedMsg">✓ Copiado</div>
+            <button class="btn-copy" onclick="copyReport()">📋 Copiar informe</button>
+            <button class="btn-whatsapp" onclick="shareWhatsapp()">💬 Compartir por WhatsApp</button>
+            <button class="btn-new" onclick="newVisit()">🔄 Nueva visita</button>
+        </div>
+    </div>
+
+    <div class="nav-buttons" id="navButtons">
+        <button class="btn-back" id="btnBack" onclick="prevStep()" style="display:none">← Atrás</button>
+        <button class="btn-next" id="btnNext" onclick="nextStep()">Siguiente →</button>
+    </div>
+
+</div>
+
+<script>
+    let currentStep = 1;
+    const totalSteps = 6;
+    let roomCount = 0;
+
+    const stepTitles = [
+        'Datos del cliente',
+        'Equipamiento',
+        'Señal por ambiente',
+        'Análisis WiFi',
+        'Problemas detectados',
+        'Informe final'
+    ];
+
+    function updateUI() {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step' + currentStep).classList.add('active');
+        const pct = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('stepIndicator').textContent = 'Paso ' + currentStep + ' de ' + totalSteps;
+        document.getElementById('stepSubtitle').textContent = stepTitles[currentStep - 1];
+        document.getElementById('btnBack').style.display = currentStep > 1 ? 'block' : 'none';
+        var btnNext = document.getElementById('btnNext');
+        if (currentStep === totalSteps) {
+            btnNext.style.display = 'none';
+        } else if (currentStep === totalSteps - 1) {
+            btnNext.textContent = 'Generar informe →';
+            btnNext.style.display = 'block';
+        } else {
+            btnNext.textContent = 'Siguiente →';
+            btnNext.style.display = 'block';
+        }
+    }
+
+    function nextStep() {
+        if (currentStep === totalSteps - 1) generateReport();
+        if (currentStep < totalSteps) {
+            currentStep++;
+            updateUI();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) { currentStep--; updateUI(); window.scrollTo(0, 0); }
+    }
+
+    var defaultNames = ['Junto al router', 'Living / comedor', 'Dormitorio 1', 'Dormitorio 2', 'Cocina', 'Baño', 'Garaje / patio'];
+
+    function addRoom() {
+        roomCount++;
+        var id = roomCount;
+        var defName = defaultNames[id - 1] || ('Ambiente ' + id);
+        var div = document.createElement('div');
+        div.className = 'room-card';
+        div.id = 'room' + id;
+        div.innerHTML =
+            '<div class="room-header">' +
+                '<div class="room-title">📍 Ambiente ' + id + '</div>' +
+                '<button class="btn-remove" onclick="removeRoom(' + id + ')">✕ Quitar</button>' +
+            '</div>' +
+            '<div class="form-group">' +
+                '<label>Nombre</label>' +
+                '<input type="text" id="roomName' + id + '" value="' + defName + '">' +
+            '</div>' +
+            '<div class="room-grid">' +
+                '<div class="form-group"><label>dBm</label><input type="number" id="roomDbm' + id + '" placeholder="-60" oninput="updateSignal(' + id + ')"></div>' +
+                '<div class="form-group"><label>Bajada Mbps</label><input type="number" id="roomDown' + id + '" placeholder="95"></div>' +
+                '<div class="form-group"><label>Subida Mbps</label><input type="number" id="roomUp' + id + '" placeholder="50"></div>' +
+            '</div>' +
+            '<div class="signal-indicator" id="sig' + id + '"></div>';
+        document.getElementById('roomList').appendChild(div);
+    }
+
+    function removeRoom(id) {
+        var el = document.getElementById('room' + id);
+        if (el) el.remove();
+    }
+
+    function updateSignal(id) {
+        var dbm = parseInt(document.getElementById('roomDbm' + id).value);
+        var el = document.getElementById('sig' + id);
+        if (isNaN(dbm)) { el.innerHTML = ''; return; }
+        var cls, txt;
+        if (dbm > -60)      { cls = 'signal-excellent'; txt = '🟢 Excelente'; }
+        else if (dbm > -70) { cls = 'signal-good';      txt = '🟡 Buena'; }
+        else if (dbm > -80) { cls = 'signal-ok';        txt = '🟠 Aceptable'; }
+        else                 { cls = 'signal-bad';       txt = '🔴 Problemática'; }
+        el.innerHTML = '<span class="signal-badge ' + cls + '">' + txt + ' (' + dbm + ' dBm)</span>';
+    }
+
+    function sigText(dbm) {
+        if (isNaN(dbm)) return 'Sin dato';
+        if (dbm > -60) return 'Excelente';
+        if (dbm > -70) return 'Buena';
+        if (dbm > -80) return 'Aceptable';
+        return 'Problemática';
+    }
+
+    function getRooms() {
+        var rooms = [];
+        document.querySelectorAll('.room-card').forEach(function(card) {
+            var id = card.id.replace('room', '');
+            var nameEl = document.getElementById('roomName' + id);
+            var dbmEl  = document.getElementById('roomDbm'  + id);
+            var downEl = document.getElementById('roomDown' + id);
+            var upEl   = document.getElementById('roomUp'   + id);
+            rooms.push({
+                name: nameEl ? nameEl.value : 'Ambiente',
+                dbm:  dbmEl  ? parseInt(dbmEl.value)   : NaN,
+                down: downEl ? parseFloat(downEl.value) : NaN,
+                up:   upEl   ? parseFloat(upEl.value)   : NaN
+            });
+        });
+        return rooms;
+    }
+
+    function getProblems() {
+        var checked = [];
+        document.querySelectorAll('.problem:checked').forEach(function(cb) { checked.push(cb.value); });
+        return checked;
+    }
+
+    function generateReport() {
+        var now = new Date();
+        var fecha = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        var hora  = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+        var client     = document.getElementById('clientName').value     || 'Sin nombre';
+        var address    = document.getElementById('clientAddress').value  || 'Sin dirección';
+        var tech       = document.getElementById('techName').value       || '-';
+        var isp        = document.getElementById('ispName').value        || '-';
+        var contracted = document.getElementById('contractedSpeed').value || '-';
+        var routerModel= document.getElementById('routerModel').value    || '-';
+        var ageMap     = { new:'<1 año', mid:'1-3 años', old:'3-5 años', veryold:'+5 años', unknown:'No sabe', '':'-' };
+        var routerAge  = ageMap[document.getElementById('routerAge').value] || '-';
+
+        var posEl  = document.querySelector('input[name="routerPos"]:checked');
+        var posMap = { center:'Centro de la casa', middle:'Zona intermedia', corner:'Rincón / extremo' };
+        var posText = posEl ? (posMap[posEl.value] || '-') : '-';
+
+        var mountEl  = document.querySelector('input[name="routerMount"]:checked');
+        var mountMap = { open:'Sobre mueble/pared', furniture:'Dentro de mueble cerrado', behind:'Detrás de TV/equipo', closet:'En placard/caja' };
+        var mountText = mountEl ? (mountMap[mountEl.value] || '-') : '-';
+
+        var speedDown = document.getElementById('speedAtRouter').value || '-';
+        var speedUp   = document.getElementById('uploadAtRouter').value || '-';
+        var ch24      = document.getElementById('channel24').value || 'No revisado';
+        var congMap   = { low:'Baja (1-2 redes)', mid:'Media (3-5 redes)', high:'Alta (6+ redes)', '':'No revisado' };
+        var cong      = congMap[document.getElementById('congestion24').value] || 'No revisado';
+        var g5El      = document.querySelector('input[name="has5g"]:checked');
+        var g5Map     = { yes:'Sí', no:'No', unknown:'No verificado' };
+        var has5g     = g5El ? (g5Map[g5El.value] || '-') : '-';
+
+        var rooms    = getRooms();
+        var problems = getProblems();
+        var extra    = document.getElementById('extraNotes').value;
+
+        var probLabels = {
+            dead_zones:'Zonas sin cobertura', slow_speed:'Velocidad baja',
+            unstable:'Señal inestable', bad_location:'Router mal ubicado',
+            old_router:'Router antiguo/gama baja', bad_repeater:'Repetidor degrada velocidad',
+            obstructed:'Equipo en mueble/placard', congested_channel:'Canal 2.4GHz congestionado',
+            thick_walls:'Paredes bloqueando señal', appliances:'Interferencia de electrodomésticos'
+        };
+
+        // --- Diagnosis ---
+        var diag = [];
+        var badRooms = rooms.filter(function(r) { return !isNaN(r.dbm) && r.dbm <= -80; });
+
+        if (rooms.length > 0 && badRooms.length === 0) {
+            diag.push({ type:'good', title:'Cobertura aceptable', desc:'No se detectaron zonas con señal crítica.' });
+        } else if (badRooms.length > 0) {
+            diag.push({ type:'bad', title:'Zonas con señal crítica (' + badRooms.length + ')', desc: badRooms.map(function(r){ return r.name; }).join(', ') });
+        }
+
+        if (posEl && (posEl.value === 'corner')) {
+            diag.push({ type:'warn', title:'Router mal ubicado', desc:'Moverlo al centro puede mejorar la cobertura sin costo.' });
+        }
+        if (mountEl && (mountEl.value === 'furniture' || mountEl.value === 'closet' || mountEl.value === 'behind')) {
+            diag.push({ type:'warn', title:'Router obstruido', desc:'El montaje actual reduce la señal significativamente.' });
+        }
+        if (document.getElementById('routerAge').value === 'veryold') {
+            diag.push({ type:'warn', title:'Router muy antiguo', desc:'Más de 5 años puede limitar el rendimiento máximo.' });
+        }
+        if (document.getElementById('congestion24').value === 'high') {
+            diag.push({ type:'warn', title:'Canal 2.4GHz saturado', desc:'Cambiar de canal puede mejorar la conexión de todos los dispositivos.' });
+        }
+        var spDown = parseFloat(document.getElementById('speedAtRouter').value);
+        var spCont = parseFloat(document.getElementById('contractedSpeed').value);
+        if (!isNaN(spDown) && !isNaN(spCont) && spCont > 0 && spDown < spCont * 0.6) {
+            diag.push({ type:'warn', title:'Velocidad real baja junto al router', desc: Math.round(spDown) + ' Mbps recibidos de ' + spCont + ' Mbps contratados. Puede ser problema del ISP o del cable.' });
+        }
+        if (badRooms.length >= 2 || (badRooms.length >= 1 && problems.indexOf('thick_walls') >= 0)) {
+            diag.push({ type:'bad', title:'Se recomienda MESH o Access Point', desc:'La cobertura actual no alcanza para todo el domicilio.' });
+        }
+        if (diag.length === 0) {
+            diag.push({ type:'good', title:'Red en buen estado', desc:'No se detectaron problemas significativos.' });
+        }
+
+        var diagArea = document.getElementById('diagnosisArea');
+        diagArea.innerHTML = diag.map(function(d) {
+            var icon = d.type === 'good' ? '✅' : d.type === 'warn' ? '⚠️' : '❌';
+            return '<div class="diagnosis-card diagnosis-' + d.type + '">' +
+                '<div class="diagnosis-title">' + icon + ' ' + d.title + '</div>' +
+                '<div class="diagnosis-desc">' + d.desc + '</div>' +
+                '</div>';
+        }).join('');
+
+        // --- Recommendations ---
+        var recs = [];
+        if (posEl && posEl.value === 'corner') recs.push('• Reubicar el router al centro del domicilio');
+        if (mountEl && (mountEl.value === 'furniture' || mountEl.value === 'closet' || mountEl.value === 'behind')) recs.push('• Sacar el router del mueble/placard y colocarlo en lugar abierto');
+        if (document.getElementById('congestion24').value === 'high') recs.push('• Cambiar el canal WiFi 2.4GHz a uno menos congestionado');
+        if (badRooms.length >= 1) recs.push('• Agregar nodo MESH o Access Point para mejorar cobertura');
+        if (problems.indexOf('bad_repeater') >= 0) recs.push('• Reemplazar el repetidor por un sistema MESH');
+        if (document.getElementById('routerAge').value === 'veryold') recs.push('• Evaluar reemplazo del router por equipo más moderno');
+        if (has5g === 'No') recs.push('• Considerar router dual-band con banda 5GHz');
+        if (recs.length === 0) recs.push('• No se requieren cambios. La red funciona correctamente.');
+
+        // --- Build text ---
+        var extras = [];
+        if (document.getElementById('hasRepeater').checked) extras.push('Repetidor WiFi');
+        if (document.getElementById('hasMesh').checked) extras.push('Sistema MESH');
+        if (document.getElementById('hasAP').checked) extras.push('Access Point');
+        var extrasText = extras.length ? extras.join(', ') : 'Ninguno';
+
+        var txt = '📶 INFORME DE RELEVAMIENTO WiFi\n';
+        txt += '━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+        txt += '📅 Fecha: ' + fecha + ' ' + hora + '\n';
+        txt += '👤 Cliente: ' + client + '\n';
+        txt += '📍 Dirección: ' + address + '\n';
+        txt += '🔧 Técnico: ' + tech + '\n\n';
+
+        txt += '📡 EQUIPAMIENTO\n';
+        txt += '• ISP: ' + isp + '\n';
+        txt += '• Velocidad contratada: ' + contracted + ' Mbps\n';
+        txt += '• Router: ' + routerModel + ' (' + routerAge + ')\n';
+        txt += '• Equipos adicionales: ' + extrasText + '\n';
+        txt += '• Ubicación router: ' + posText + '\n';
+        txt += '• Montaje: ' + mountText + '\n\n';
+
+        txt += '⚡ VELOCIDAD EN EL ROUTER\n';
+        txt += '• Bajada: ' + speedDown + ' Mbps\n';
+        txt += '• Subida: ' + speedUp + ' Mbps\n\n';
+
+        txt += '📊 MEDICIÓN POR AMBIENTE\n';
+        rooms.forEach(function(r) {
+            txt += '• ' + r.name + ': ';
+            txt += (isNaN(r.dbm) ? '-' : r.dbm + ' dBm') + ' (' + sigText(r.dbm) + ')';
+            if (!isNaN(r.down)) txt += ' | ↓' + r.down + ' Mbps';
+            if (!isNaN(r.up))   txt += ' ↑' + r.up + ' Mbps';
+            txt += '\n';
+        });
+
+        txt += '\n📡 CANALES\n';
+        txt += '• Canal 2.4GHz: ' + (ch24 || 'No revisado') + '\n';
+        txt += '• Interferencia vecinos: ' + cong + '\n';
+        txt += '• Banda 5GHz: ' + has5g + '\n';
+
+        if (problems.length > 0) {
+            txt += '\n⚠️ PROBLEMAS DETECTADOS\n';
+            problems.forEach(function(p) { txt += '• ' + (probLabels[p] || p) + '\n'; });
+        }
+
+        txt += '\n✅ RECOMENDACIONES\n';
+        recs.forEach(function(r) { txt += r + '\n'; });
+
+        if (extra) {
+            txt += '\n📝 OBSERVACIONES\n' + extra + '\n';
+        }
+
+        txt += '\n━━━━━━━━━━━━━━━━━━━━━━━━━';
+
+        document.getElementById('reportText').textContent = txt;
+        window._reportText = txt;
+    }
+
+    function copyReport() {
+        var text = window._reportText || '';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(showCopied).catch(fallbackCopy);
+        } else { fallbackCopy(); }
+    }
+
+    function fallbackCopy() {
+        var ta = document.createElement('textarea');
+        ta.value = window._reportText || '';
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        try { document.execCommand('copy'); showCopied(); } catch(e) {}
+        document.body.removeChild(ta);
+    }
+
+    function showCopied() {
+        var msg = document.getElementById('copiedMsg');
+        msg.style.display = 'block';
+        setTimeout(function() { msg.style.display = 'none'; }, 2000);
+    }
+
+    function shareWhatsapp() {
+        var text = window._reportText || '';
+        window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function newVisit() {
+        if (confirm('¿Nueva visita? Se perderán los datos actuales.')) location.reload();
+    }
+
+    // Init
+    addRoom();
+    updateUI();
+</script>
+</body>
+</html>
