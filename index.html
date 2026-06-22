@@ -273,6 +273,52 @@
             color: #6b7280;
             line-height: 1.9;
         }
+        /* Floor cards */
+        .floor-card {
+            background: #f0f9ff;
+            border: 1.5px solid #bae6fd;
+            border-radius: 10px;
+            padding: 13px;
+            margin-bottom: 10px;
+        }
+        .floor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .floor-title { font-weight: 600; font-size: 14px; color: #0369a1; }
+        .device-row {
+            display: grid;
+            grid-template-columns: 2fr 3fr;
+            gap: 6px;
+            margin-bottom: 6px;
+            align-items: end;
+        }
+        .device-row .form-group { margin-bottom: 0; }
+        .device-row label { font-size: 11px; }
+        .device-row input, .device-row select { font-size: 13px; padding: 7px 8px; }
+        .btn-remove-device {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+            align-self: flex-end;
+            margin-bottom: 1px;
+        }
+        .btn-add-device {
+            background: none;
+            border: none;
+            color: #0284c7;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
         .btn-pdf {
             width: 100%;
             padding: 14px;
@@ -358,7 +404,13 @@
             </div>
         </div>
         <div class="card">
-            <div class="card-title">📍 Ubicación del router</div>
+            <div class="card-title">🏠 Equipamiento por piso</div>
+            <div class="alert alert-info">Documentá qué hay en cada piso o área del domicilio.</div>
+            <div id="floorList"></div>
+            <button class="btn-add" onclick="addFloor()">+ Agregar piso / área</button>
+        </div>
+        <div class="card">
+            <div class="card-title">📍 Ubicación del router principal</div>
             <div class="form-group">
                 <label>Posición en el domicilio</label>
                 <div class="option-group">
@@ -611,6 +663,90 @@
         return 'Problemática';
     }
 
+    var floorCount = 0;
+    var floorDeviceCount = {};
+    var floorNames = ['Planta baja', 'Primer piso', 'Segundo piso', 'Terraza / azotea', 'Sótano'];
+    var deviceTypes = ['Módem ISP', 'Router', 'Repetidor WiFi', 'Nodo MESH', 'Access Point', 'Switch', 'Otro'];
+
+    function addFloor() {
+        floorCount++;
+        var fid = floorCount;
+        floorDeviceCount[fid] = 0;
+        var defName = floorNames[fid - 1] || ('Piso ' + fid);
+        var div = document.createElement('div');
+        div.className = 'floor-card';
+        div.id = 'floor' + fid;
+        div.innerHTML =
+            '<div class="floor-header">' +
+                '<div class="floor-title">🏠 Piso / Área ' + fid + '</div>' +
+                '<button class="btn-remove" onclick="removeFloor(' + fid + ')">✕ Quitar</button>' +
+            '</div>' +
+            '<div class="form-group">' +
+                '<label>Nombre del piso o área</label>' +
+                '<input type="text" id="floorName' + fid + '" value="' + defName + '">' +
+            '</div>' +
+            '<div id="floorDevices' + fid + '"></div>' +
+            '<button class="btn-add-device" onclick="addFloorDevice(' + fid + ')">+ Agregar equipo</button>';
+        document.getElementById('floorList').appendChild(div);
+        addFloorDevice(fid);
+    }
+
+    function removeFloor(fid) {
+        var el = document.getElementById('floor' + fid);
+        if (el) el.remove();
+    }
+
+    function addFloorDevice(fid) {
+        floorDeviceCount[fid] = (floorDeviceCount[fid] || 0) + 1;
+        var did = floorDeviceCount[fid];
+        var container = document.getElementById('floorDevices' + fid);
+        var row = document.createElement('div');
+        row.id = 'floorDevice' + fid + '_' + did;
+        row.style.cssText = 'display:flex; gap:6px; align-items:flex-end; margin-bottom:6px;';
+        var opts = deviceTypes.map(function(t) {
+            return '<option value="' + t + '">' + t + '</option>';
+        }).join('');
+        row.innerHTML =
+            '<div class="form-group" style="flex:1.2">' +
+                '<label>Tipo</label>' +
+                '<select id="floorDType' + fid + '_' + did + '">' + opts + '</select>' +
+            '</div>' +
+            '<div class="form-group" style="flex:2">' +
+                '<label>Modelo / detalle</label>' +
+                '<input type="text" id="floorDModel' + fid + '_' + did + '" placeholder="Ej: Tenda N300">' +
+            '</div>' +
+            '<button class="btn-remove-device" onclick="removeFloorDevice(' + fid + ',' + did + ')" title="Quitar">×</button>';
+        container.appendChild(row);
+    }
+
+    function removeFloorDevice(fid, did) {
+        var el = document.getElementById('floorDevice' + fid + '_' + did);
+        if (el) el.remove();
+    }
+
+    function getFloors() {
+        var floors = [];
+        document.querySelectorAll('.floor-card').forEach(function(card) {
+            var fid = card.id.replace('floor', '');
+            var nameEl = document.getElementById('floorName' + fid);
+            var name = nameEl ? nameEl.value : ('Piso ' + fid);
+            var devices = [];
+            card.querySelectorAll('[id^="floorDevice' + fid + '_"]').forEach(function(row) {
+                var did = row.id.split('_')[1];
+                var typeEl  = document.getElementById('floorDType'  + fid + '_' + did);
+                var modelEl = document.getElementById('floorDModel' + fid + '_' + did);
+                if (typeEl) {
+                    devices.push({
+                        type:  typeEl.value  || '-',
+                        model: modelEl ? (modelEl.value || '') : ''
+                    });
+                }
+            });
+            if (devices.length > 0) floors.push({ name: name, devices: devices });
+        });
+        return floors;
+    }
+
     function getRooms() {
         var rooms = [];
         document.querySelectorAll('.room-card').forEach(function(card) {
@@ -667,6 +803,7 @@
         var has5g     = g5El ? (g5Map[g5El.value] || '-') : '-';
 
         var rooms    = getRooms();
+        var floors   = getFloors();
         var problems = getProblems();
         var extra    = document.getElementById('extraNotes').value;
 
@@ -755,6 +892,16 @@
         txt += '• Equipos adicionales: ' + extrasText + '\n';
         txt += '• Ubicación router: ' + posText + '\n';
         txt += '• Montaje: ' + mountText + '\n\n';
+
+        if (floors.length > 0) {
+            txt += '🏠 EQUIPAMIENTO POR PISO\n';
+            floors.forEach(function(f) {
+                txt += '• ' + f.name + ': ';
+                txt += f.devices.map(function(d) { return d.type + (d.model ? ' (' + d.model + ')' : ''); }).join(' + ');
+                txt += '\n';
+            });
+            txt += '\n';
+        }
 
         txt += '⚡ VELOCIDAD EN EL ROUTER\n';
         txt += '• Bajada: ' + speedDown + ' Mbps\n';
@@ -925,6 +1072,20 @@
         row('Ubicación:', posText);
         row('Montaje:', mountText);
         y += 2;
+
+        // ── EQUIPAMIENTO POR PISO ──
+        var floors = getFloors();
+        if (floors.length > 0) {
+            checkY(10 + floors.length * 7);
+            sectionTitle('EQUIPAMIENTO POR PISO');
+            floors.forEach(function(f) {
+                var devText = f.devices.map(function(d) {
+                    return d.type + (d.model ? ' (' + d.model + ')' : '');
+                }).join('  +  ');
+                row(f.name + ':', devText);
+            });
+            y += 2;
+        }
 
         // ── VELOCIDAD EN EL ROUTER ──
         var speedDown = document.getElementById('speedAtRouter').value;
