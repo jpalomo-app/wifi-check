@@ -552,14 +552,7 @@
                     <option value="high">Muchas (6 o más)</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>¿El router emite 5GHz?</label>
-                <div class="option-group">
-                    <label class="option-item"><input type="radio" name="has5g" value="yes"> <span>Sí</span></label>
-                    <label class="option-item"><input type="radio" name="has5g" value="no"> <span>No</span></label>
-                    <label class="option-item"><input type="radio" name="has5g" value="unknown"> <span>No verificado</span></label>
-                </div>
-            </div>
+            <div id="band5gSection"></div>
             <div class="form-group">
                 <label>¿2.4GHz y 5GHz tienen el mismo nombre?</label>
                 <div class="option-group">
@@ -701,6 +694,7 @@
     }
 
     function nextStep() {
+        if (currentStep === 3) populateBand5g();
         if (currentStep === 6) populateAfterRooms();
         if (currentStep === totalSteps - 1) generateReport();
         if (currentStep < totalSteps) {
@@ -847,6 +841,69 @@
     }
 
     // ── DESPUÉS: medición post-instalación ──
+    function populateBand5g() {
+        var container = document.getElementById('band5gSection');
+        container.innerHTML = '';
+        var floors = getFloors();
+
+        // Recopilar todos los dispositivos de todos los pisos
+        var devices = [];
+        floors.forEach(function(f) {
+            f.devices.forEach(function(d) {
+                var label = d.type + (d.model ? ' — ' + d.model : '') + ' (' + f.name + ')';
+                devices.push({ id: f.name.replace(/\s/g,'_') + '_' + d.type.replace(/\s/g,'_') + '_' + devices.length, label: label });
+            });
+        });
+
+        if (devices.length === 0) {
+            // Fallback: pregunta genérica si no hay dispositivos cargados
+            container.innerHTML =
+                '<div class="form-group">' +
+                '<label>¿El router emite 5GHz?</label>' +
+                '<div class="option-group">' +
+                '<label class="option-item"><input type="radio" name="has5g_generic" value="yes"> <span>Sí</span></label>' +
+                '<label class="option-item"><input type="radio" name="has5g_generic" value="no"> <span>No</span></label>' +
+                '<label class="option-item"><input type="radio" name="has5g_generic" value="unknown"> <span>No verificado</span></label>' +
+                '</div></div>';
+            return;
+        }
+
+        var html = '<div class="section-label" style="margin-bottom:10px;">¿Emite banda 5GHz?</div>';
+        devices.forEach(function(dev) {
+            html +=
+                '<div style="background:#fdf4ff;border:1.5px solid #d8b4fe;border-radius:8px;padding:10px 12px;margin-bottom:8px;">' +
+                '<div style="font-size:13px;font-weight:600;color:#4A1565;margin-bottom:7px;">📡 ' + dev.label + '</div>' +
+                '<div class="option-group">' +
+                '<label class="option-item"><input type="radio" name="has5g_' + dev.id + '" value="yes"> <span>Sí, emite 5GHz</span></label>' +
+                '<label class="option-item"><input type="radio" name="has5g_' + dev.id + '" value="no"> <span>No, solo 2.4GHz</span></label>' +
+                '<label class="option-item"><input type="radio" name="has5g_' + dev.id + '" value="unknown"> <span>No verificado</span></label>' +
+                '</div></div>';
+        });
+        container.innerHTML = html;
+        container._deviceIds = devices.map(function(d){ return d.id; });
+        container._deviceLabels = devices.map(function(d){ return d.label; });
+    }
+
+    function get5gData() {
+        var container = document.getElementById('band5gSection');
+        var results = [];
+
+        // Modo genérico (sin dispositivos cargados)
+        var genericEl = document.querySelector('input[name="has5g_generic"]:checked');
+        if (genericEl) {
+            return [{ label: 'Router', value: genericEl.value }];
+        }
+
+        // Modo por dispositivo
+        var ids = container._deviceIds || [];
+        var labels = container._deviceLabels || [];
+        ids.forEach(function(id, i) {
+            var el = document.querySelector('input[name="has5g_' + id + '"]:checked');
+            results.push({ label: labels[i] || ('Dispositivo ' + (i+1)), value: el ? el.value : 'unknown' });
+        });
+        return results;
+    }
+
     function populateAfterRooms() {
         var container = document.getElementById('afterRoomList');
         container.innerHTML = '';
@@ -1047,9 +1104,10 @@
         var ch24      = document.getElementById('channel24').value || 'No revisado';
         var congMap   = { low:'Baja (1-2 redes)', mid:'Media (3-5 redes)', high:'Alta (6+ redes)', '':'No revisado' };
         var cong      = congMap[document.getElementById('congestion24').value] || 'No revisado';
-        var g5El      = document.querySelector('input[name="has5g"]:checked');
         var g5Map     = { yes:'Sí', no:'No', unknown:'No verificado' };
-        var has5g     = g5El ? (g5Map[g5El.value] || '-') : '-';
+        var band5gData = get5gData();
+        var has5gAny   = band5gData.some(function(d){ return d.value === 'yes'; });
+        var has5gNone  = band5gData.every(function(d){ return d.value === 'no'; });
 
         var rooms      = getRooms();
         var floors     = getFloors();
@@ -1121,7 +1179,8 @@
         if (badRooms.length >= 1) recs.push('• Agregar nodo MESH o Access Point para mejorar cobertura');
         if (problems.indexOf('bad_repeater') >= 0) recs.push('• Reemplazar el repetidor por un sistema MESH');
         if (document.getElementById('routerAge').value === 'veryold') recs.push('• Evaluar reemplazo del router por equipo más moderno');
-        if (has5g === 'No') recs.push('• Considerar router dual-band con banda 5GHz');
+        if (has5gNone) recs.push('• Reemplazar equipos por modelos dual-band con banda 5GHz');
+        else if (!has5gAny) recs.push('• Verificar soporte de banda 5GHz en los equipos');
         if (recs.length === 0) recs.push('• No se requieren cambios. La red funciona correctamente.');
 
         // --- Build text ---
@@ -1172,7 +1231,9 @@
         txt += '\n📡 CANALES\n';
         txt += '• Canal 2.4GHz: ' + (ch24 || 'No revisado') + '\n';
         txt += '• Interferencia vecinos: ' + cong + '\n';
-        txt += '• Banda 5GHz: ' + has5g + '\n';
+        band5gData.forEach(function(d) {
+            txt += '• 5GHz ' + d.label + ': ' + (g5Map[d.value] || '-') + '\n';
+        });
 
         if (problems.length > 0) {
             txt += '\n⚠️ PROBLEMAS DETECTADOS\n';
@@ -1438,15 +1499,18 @@
         var congMap = { low:'Baja (1-2 redes)', mid:'Media (3-5 redes)', high:'Alta (6+ redes)', '':'No revisado' };
         var cong  = congMap[document.getElementById('congestion24').value] || 'No revisado';
         var ch24  = document.getElementById('channel24').value || 'No revisado';
-        var g5El  = document.querySelector('input[name="has5g"]:checked');
-        var g5Map = { yes:'Sí', no:'No', unknown:'No verificado' };
-        var has5g = g5El ? (g5Map[g5El.value] || '-') : '-';
+        var g5Map2 = { yes:'Sí', no:'No', unknown:'No verificado' };
+        var band5gPdf = get5gData();
+        var has5gNonePdf = band5gPdf.every(function(d){ return d.value === 'no'; });
+        var has5gAnyPdf  = band5gPdf.some(function(d){ return d.value === 'yes'; });
 
         checkY(25);
         sectionTitle('ANÁLISIS DE CANALES');
         row('Canal 2.4GHz:', ch24);
         row('Interferencia vecinos:', cong);
-        row('Banda 5GHz:', has5g);
+        band5gPdf.forEach(function(d) {
+            row('5GHz ' + d.label + ':', g5Map2[d.value] || '-');
+        });
         y += 2;
 
         // ── PROBLEMAS ──
@@ -1477,7 +1541,8 @@
         if (hasDeadZones2 || badRooms2.length >= 1) recs.push('Agregar nodo MESH o Access Point para mejorar cobertura');
         if (problems.indexOf('bad_repeater') >= 0) recs.push('Reemplazar el repetidor por un sistema MESH');
         if (document.getElementById('routerAge').value === 'veryold') recs.push('Evaluar reemplazo del router por equipo más moderno');
-        if (has5g === 'No') recs.push('Considerar router dual-band con banda 5GHz');
+        if (has5gNonePdf) recs.push('Reemplazar equipos por modelos dual-band con banda 5GHz');
+        else if (!has5gAnyPdf) recs.push('Verificar soporte de banda 5GHz en los equipos');
         if (recs.length === 0) recs.push('No se requieren cambios. La red funciona correctamente.');
 
         checkY(10 + recs.length * 6);
