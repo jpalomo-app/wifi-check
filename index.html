@@ -273,7 +273,21 @@
             color: #6b7280;
             line-height: 1.9;
         }
+        .btn-pdf {
+            width: 100%;
+            padding: 14px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
     </style>
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -484,8 +498,9 @@
             <div class="card-title">📋 Informe</div>
             <div class="report-box" id="reportText"></div>
             <div class="copied-msg" id="copiedMsg">✓ Copiado</div>
-            <button class="btn-copy" onclick="copyReport()">📋 Copiar informe</button>
-            <button class="btn-whatsapp" onclick="shareWhatsapp()">💬 Compartir por WhatsApp</button>
+            <button class="btn-pdf" onclick="generatePDF()">📄 Descargar PDF</button>
+            <button class="btn-copy" onclick="copyReport()">📋 Copiar texto</button>
+            <button class="btn-whatsapp" onclick="shareWhatsapp()">💬 Compartir texto por WhatsApp</button>
             <button class="btn-new" onclick="newVisit()">🔄 Nueva visita</button>
         </div>
     </div>
@@ -803,6 +818,242 @@
     function shareWhatsapp() {
         var text = window._reportText || '';
         window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function generatePDF() {
+        var { jsPDF } = window.jspdf;
+        var doc = new jsPDF({ unit: 'mm', format: 'a4' });
+        var W = doc.internal.pageSize.getWidth();
+        var margin = 14;
+        var y = 0;
+
+        function addPage() {
+            doc.addPage();
+            y = 14;
+            // header en cada página
+            doc.setFillColor(37, 99, 235);
+            doc.rect(0, 0, W, 10, 'F');
+            doc.setFontSize(8); doc.setTextColor(255,255,255);
+            doc.text('WiFi Check Pro — Informe de Relevamiento', margin, 7);
+            y = 16;
+        }
+
+        function checkY(needed) {
+            if (y + needed > 280) addPage();
+        }
+
+        function sectionTitle(text) {
+            checkY(10);
+            doc.setFillColor(239, 246, 255);
+            doc.rect(margin, y, W - margin*2, 7, 'F');
+            doc.setFontSize(10); doc.setTextColor(30, 64, 175);
+            doc.setFont('helvetica', 'bold');
+            doc.text(text, margin + 2, y + 5);
+            doc.setFont('helvetica', 'normal');
+            y += 10;
+        }
+
+        function row(label, value) {
+            checkY(6);
+            doc.setFontSize(9); doc.setTextColor(107, 114, 128);
+            doc.text(label, margin + 2, y);
+            doc.setTextColor(26, 32, 44);
+            doc.text(String(value || '-'), margin + 50, y);
+            y += 5.5;
+        }
+
+        function bullet(text, color) {
+            checkY(6);
+            color = color || [26, 32, 44];
+            doc.setFontSize(9);
+            doc.setTextColor(color[0], color[1], color[2]);
+            var lines = doc.splitTextToSize(text, W - margin*2 - 6);
+            lines.forEach(function(line, i) {
+                if (i === 0) doc.text('•  ' + line, margin + 2, y);
+                else doc.text('    ' + line, margin + 2, y);
+                y += 5;
+            });
+        }
+
+        // ── PORTADA / HEADER ──
+        doc.setFillColor(37, 99, 235);
+        doc.rect(0, 0, W, 28, 'F');
+        doc.setFontSize(18); doc.setTextColor(255,255,255);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INFORME DE RELEVAMIENTO WiFi', margin, 16);
+        doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+
+        var now = new Date();
+        var fecha = now.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        var hora  = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+        doc.text('Generado: ' + fecha + ' ' + hora, margin, 24);
+        y = 36;
+
+        // ── DATOS DEL CLIENTE ──
+        var client     = document.getElementById('clientName').value     || '-';
+        var address    = document.getElementById('clientAddress').value  || '-';
+        var tech       = document.getElementById('techName').value       || '-';
+        var isp        = document.getElementById('ispName').value        || '-';
+        var contracted = document.getElementById('contractedSpeed').value || '-';
+
+        sectionTitle('DATOS DEL CLIENTE');
+        row('Cliente:', client);
+        row('Dirección:', address);
+        row('Técnico:', tech);
+        row('ISP:', isp);
+        row('Velocidad contratada:', contracted + ' Mbps');
+        y += 2;
+
+        // ── EQUIPAMIENTO ──
+        var routerModel = document.getElementById('routerModel').value || '-';
+        var ageMap = { new:'<1 año', mid:'1-3 años', old:'3-5 años', veryold:'+5 años', unknown:'No sabe', '':'-' };
+        var routerAge = ageMap[document.getElementById('routerAge').value] || '-';
+        var posEl = document.querySelector('input[name="routerPos"]:checked');
+        var posMap = { center:'Centro de la casa', middle:'Zona intermedia', corner:'Rincón / extremo' };
+        var posText = posEl ? (posMap[posEl.value] || '-') : '-';
+        var mountEl = document.querySelector('input[name="routerMount"]:checked');
+        var mountMap = { open:'Sobre mueble/pared', furniture:'Dentro de mueble cerrado', behind:'Detrás de TV/equipo', closet:'En placard/caja' };
+        var mountText = mountEl ? (mountMap[mountEl.value] || '-') : '-';
+        var extras = [];
+        if (document.getElementById('hasRepeater').checked) extras.push('Repetidor WiFi');
+        if (document.getElementById('hasMesh').checked) extras.push('MESH');
+        if (document.getElementById('hasAP').checked) extras.push('Access Point');
+
+        sectionTitle('EQUIPAMIENTO');
+        row('Router:', routerModel + ' (' + routerAge + ')');
+        row('Adicionales:', extras.length ? extras.join(', ') : 'Ninguno');
+        row('Ubicación:', posText);
+        row('Montaje:', mountText);
+        y += 2;
+
+        // ── VELOCIDAD EN EL ROUTER ──
+        var speedDown = document.getElementById('speedAtRouter').value;
+        var speedUp   = document.getElementById('uploadAtRouter').value;
+        sectionTitle('VELOCIDAD EN EL ROUTER');
+        row('Bajada:', speedDown ? speedDown + ' Mbps' : '-');
+        row('Subida:', speedUp ? speedUp + ' Mbps' : '-');
+        y += 2;
+
+        // ── MEDICIÓN POR AMBIENTE (tabla) ──
+        var rooms = getRooms();
+        sectionTitle('MEDICIÓN POR AMBIENTE');
+
+        var tableRows = rooms.map(function(r) {
+            var sig = isNaN(r.dbm) ? '-' : (r.dbm > -60 ? 'Excelente' : r.dbm > -70 ? 'Buena' : r.dbm > -80 ? 'Aceptable' : 'Problemática');
+            return [
+                r.name,
+                isNaN(r.dbm) ? '-' : r.dbm + ' dBm',
+                sig,
+                isNaN(r.down) ? '-' : r.down + ' Mbps',
+                isNaN(r.up)   ? '-' : r.up   + ' Mbps'
+            ];
+        });
+
+        doc.autoTable({
+            startY: y,
+            head: [['Ambiente', 'dBm', 'Señal', 'Bajada', 'Subida']],
+            body: tableRows,
+            margin: { left: margin, right: margin },
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            didParseCell: function(data) {
+                if (data.column.index === 2 && data.section === 'body') {
+                    var v = data.cell.raw;
+                    if (v === 'Excelente')   data.cell.styles.textColor = [6,  95,  70];
+                    if (v === 'Buena')        data.cell.styles.textColor = [92, 64,  14];
+                    if (v === 'Aceptable')    data.cell.styles.textColor = [154,52,  18];
+                    if (v === 'Problemática') data.cell.styles.textColor = [153,27,  27];
+                }
+            }
+        });
+        y = doc.lastAutoTable.finalY + 6;
+
+        // ── CANALES ──
+        var congMap = { low:'Baja (1-2 redes)', mid:'Media (3-5 redes)', high:'Alta (6+ redes)', '':'No revisado' };
+        var cong  = congMap[document.getElementById('congestion24').value] || 'No revisado';
+        var ch24  = document.getElementById('channel24').value || 'No revisado';
+        var g5El  = document.querySelector('input[name="has5g"]:checked');
+        var g5Map = { yes:'Sí', no:'No', unknown:'No verificado' };
+        var has5g = g5El ? (g5Map[g5El.value] || '-') : '-';
+
+        checkY(25);
+        sectionTitle('ANÁLISIS DE CANALES');
+        row('Canal 2.4GHz:', ch24);
+        row('Interferencia vecinos:', cong);
+        row('Banda 5GHz:', has5g);
+        y += 2;
+
+        // ── PROBLEMAS ──
+        var problems = getProblems();
+        var probLabels = {
+            dead_zones:'Zonas sin cobertura', slow_speed:'Velocidad baja',
+            unstable:'Señal inestable', bad_location:'Router mal ubicado',
+            old_router:'Router antiguo/gama baja', bad_repeater:'Repetidor degrada velocidad',
+            obstructed:'Equipo en mueble/placard', congested_channel:'Canal 2.4GHz congestionado',
+            thick_walls:'Paredes bloqueando señal', appliances:'Interferencia de electrodomésticos'
+        };
+        if (problems.length > 0) {
+            checkY(10 + problems.length * 6);
+            sectionTitle('PROBLEMAS DETECTADOS');
+            problems.forEach(function(p) {
+                bullet(probLabels[p] || p, [153, 27, 27]);
+            });
+            y += 2;
+        }
+
+        // ── RECOMENDACIONES ──
+        var recs = [];
+        if (posEl && posEl.value === 'corner') recs.push('Reubicar el router al centro del domicilio');
+        if (mountEl && (mountEl.value === 'furniture' || mountEl.value === 'closet' || mountEl.value === 'behind')) recs.push('Sacar el router del mueble/placard y colocarlo en lugar abierto');
+        if (document.getElementById('congestion24').value === 'high') recs.push('Cambiar el canal WiFi 2.4GHz a uno menos congestionado');
+        var badRooms2 = rooms.filter(function(r){ return !isNaN(r.dbm) && r.dbm <= -80; });
+        var hasDeadZones2 = problems.indexOf('dead_zones') >= 0;
+        if (hasDeadZones2 || badRooms2.length >= 1) recs.push('Agregar nodo MESH o Access Point para mejorar cobertura');
+        if (problems.indexOf('bad_repeater') >= 0) recs.push('Reemplazar el repetidor por un sistema MESH');
+        if (document.getElementById('routerAge').value === 'veryold') recs.push('Evaluar reemplazo del router por equipo más moderno');
+        if (has5g === 'No') recs.push('Considerar router dual-band con banda 5GHz');
+        if (recs.length === 0) recs.push('No se requieren cambios. La red funciona correctamente.');
+
+        checkY(10 + recs.length * 6);
+        sectionTitle('RECOMENDACIONES');
+        recs.forEach(function(r) { bullet(r, [6, 78, 59]); });
+        y += 2;
+
+        // ── OBSERVACIONES ──
+        var extra = document.getElementById('extraNotes').value;
+        if (extra) {
+            checkY(20);
+            sectionTitle('OBSERVACIONES');
+            doc.setFontSize(9); doc.setTextColor(26, 32, 44);
+            var lines = doc.splitTextToSize(extra, W - margin*2 - 4);
+            lines.forEach(function(line) { checkY(5); doc.text(line, margin + 2, y); y += 5; });
+            y += 2;
+        }
+
+        // ── FIRMA ──
+        checkY(25);
+        y += 4;
+        doc.setDrawColor(209, 213, 219);
+        doc.line(margin, y, W/2 - 5, y);
+        doc.line(W/2 + 5, y, W - margin, y);
+        y += 5;
+        doc.setFontSize(8); doc.setTextColor(107, 114, 128);
+        doc.text('Técnico: ' + tech, margin, y);
+        doc.text('Cliente', W/2 + 5, y);
+
+        // ── FOOTER en todas las páginas ──
+        var totalPages = doc.internal.getNumberOfPages();
+        for (var i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(7); doc.setTextColor(156, 163, 175);
+            doc.text('WiFi Check Pro  |  Página ' + i + ' de ' + totalPages, margin, 292);
+        }
+
+        // nombre de archivo con cliente y fecha
+        var clientSlug = (client || 'cliente').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        var dateSlug = fecha.replace(/\//g, '-');
+        doc.save('informe_wifi_' + clientSlug + '_' + dateSlug + '.pdf');
     }
 
     function newVisit() {
